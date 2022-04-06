@@ -11,6 +11,14 @@ message MailRecipient {
     int64 usersServiceID = 3;
     google.protobuf.Timestamp created = 4;
     google.protobuf.Timestamp updated = 5;
+    repeated MailGroup groups = 6;
+}
+
+message MailGroup {
+    int64 id = 1;
+    string name = 2;
+    google.protobuf.Timestamp created = 3;
+    google.protobuf.Timestamp updated = 4;
 }
 
 message NewMailRecipient {
@@ -22,16 +30,44 @@ message MailRecipients{
     repeated MailRecipient mailRecipients = 1;
 }
 
-message MailServiceID {
+message MailGroups {
+    repeated MailGroups groups = 1;
+}
+
+message MailingServiceID {
     int64 id = 1;
 }
 
-message MailServiceEmail {
+message MailingServiceEmail {
     string email = 1;
 }
 
+message MailingServiceGroup {
+    string group = 1;
+}
+
+message MailingServiceNewGroup {
+    string name = 1;
+}
+
+message SearchRequest {
+    string query = 1;
+}
+
+message Count {
+    int64 num = 1;
+}
+
 service MailingService {
-    rpc AddRecipient(NewMailRecipient) returns (MailServiceID) {};
-    rpc RemoveRecipient(MailServiceEmail) returns (google.protobuf.Empty) {};
+    rpc AddRecipient(NewMailRecipient) returns (MailingServiceID) {};
+    rpc RemoveRecipient(MailingServiceEmail) returns (google.protobuf.Empty) {};
     rpc GetRecipients(google.protobuf.Empty) returns (MailRecipients) {};
+    rpc GetRecipientsByGroup(MailingServiceGroup) returns (MailRecipients) {};
+    rpc SearchRecipients(SearchRequest) returns (MailRecipients) {};
+    rpc CountRecipients(MailingServiceGroup) returns (Count) {};
+
+    rpc CreateGroup(MailingServiceNewGroup) returns (google.protobuf.Empty) {};
+    rpc GetGroups(google.protobuf.Empty) returns (MailGroups) {};
+    rpc DeleteGroup(MailingServiceID) returns (google.protobuf.Empty) {};
+    rpc UpdateGroupName(MailingServiceNewGroup) returns (google.protobuf.Empty) {};
 }
