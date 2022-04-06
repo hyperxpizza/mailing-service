@@ -1,0 +1,1 @@
+docker-compose -f docker-comose.dev.yml exec postgres psql -d mailingServiceDB -U mailingServiceDBuser
