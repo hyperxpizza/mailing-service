@@ -20,9 +20,9 @@ const _ = grpc.SupportPackageIsVersion7
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type MailingServiceClient interface {
 	AddRecipient(ctx context.Context, in *NewMailRecipient, opts ...grpc.CallOption) (*MailingServiceID, error)
-	RemoveRecipient(ctx context.Context, in *MailingServiceEmail, opts ...grpc.CallOption) (*empty.Empty, error)
-	GetRecipients(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*MailRecipients, error)
-	GetRecipientsByGroup(ctx context.Context, in *MailingServiceGroup, opts ...grpc.CallOption) (*MailRecipients, error)
+	RemoveRecipient(ctx context.Context, in *MailingServiceID, opts ...grpc.CallOption) (*empty.Empty, error)
+	GetRecipients(ctx context.Context, in *GetRecipientsRequest, opts ...grpc.CallOption) (*MailRecipients, error)
+	GetRecipientsByGroup(ctx context.Context, in *GetRecipientsByGroupRequest, opts ...grpc.CallOption) (*MailRecipients, error)
 	SearchRecipients(ctx context.Context, in *SearchRequest, opts ...grpc.CallOption) (*MailRecipients, error)
 	CountRecipients(ctx context.Context, in *MailingServiceGroup, opts ...grpc.CallOption) (*Count, error)
 	CreateGroup(ctx context.Context, in *MailingServiceNewGroup, opts ...grpc.CallOption) (*empty.Empty, error)
@@ -48,7 +48,7 @@ func (c *mailingServiceClient) AddRecipient(ctx context.Context, in *NewMailReci
 	return out, nil
 }
 
-func (c *mailingServiceClient) RemoveRecipient(ctx context.Context, in *MailingServiceEmail, opts ...grpc.CallOption) (*empty.Empty, error) {
+func (c *mailingServiceClient) RemoveRecipient(ctx context.Context, in *MailingServiceID, opts ...grpc.CallOption) (*empty.Empty, error) {
 	out := new(empty.Empty)
 	err := c.cc.Invoke(ctx, "/MailingService/RemoveRecipient", in, out, opts...)
 	if err != nil {
@@ -57,7 +57,7 @@ func (c *mailingServiceClient) RemoveRecipient(ctx context.Context, in *MailingS
 	return out, nil
 }
 
-func (c *mailingServiceClient) GetRecipients(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*MailRecipients, error) {
+func (c *mailingServiceClient) GetRecipients(ctx context.Context, in *GetRecipientsRequest, opts ...grpc.CallOption) (*MailRecipients, error) {
 	out := new(MailRecipients)
 	err := c.cc.Invoke(ctx, "/MailingService/GetRecipients", in, out, opts...)
 	if err != nil {
@@ -66,7 +66,7 @@ func (c *mailingServiceClient) GetRecipients(ctx context.Context, in *empty.Empt
 	return out, nil
 }
 
-func (c *mailingServiceClient) GetRecipientsByGroup(ctx context.Context, in *MailingServiceGroup, opts ...grpc.CallOption) (*MailRecipients, error) {
+func (c *mailingServiceClient) GetRecipientsByGroup(ctx context.Context, in *GetRecipientsByGroupRequest, opts ...grpc.CallOption) (*MailRecipients, error) {
 	out := new(MailRecipients)
 	err := c.cc.Invoke(ctx, "/MailingService/GetRecipientsByGroup", in, out, opts...)
 	if err != nil {
@@ -134,9 +134,9 @@ func (c *mailingServiceClient) UpdateGroupName(ctx context.Context, in *MailingS
 // for forward compatibility
 type MailingServiceServer interface {
 	AddRecipient(context.Context, *NewMailRecipient) (*MailingServiceID, error)
-	RemoveRecipient(context.Context, *MailingServiceEmail) (*empty.Empty, error)
-	GetRecipients(context.Context, *empty.Empty) (*MailRecipients, error)
-	GetRecipientsByGroup(context.Context, *MailingServiceGroup) (*MailRecipients, error)
+	RemoveRecipient(context.Context, *MailingServiceID) (*empty.Empty, error)
+	GetRecipients(context.Context, *GetRecipientsRequest) (*MailRecipients, error)
+	GetRecipientsByGroup(context.Context, *GetRecipientsByGroupRequest) (*MailRecipients, error)
 	SearchRecipients(context.Context, *SearchRequest) (*MailRecipients, error)
 	CountRecipients(context.Context, *MailingServiceGroup) (*Count, error)
 	CreateGroup(context.Context, *MailingServiceNewGroup) (*empty.Empty, error)
@@ -153,13 +153,13 @@ type UnimplementedMailingServiceServer struct {
 func (UnimplementedMailingServiceServer) AddRecipient(context.Context, *NewMailRecipient) (*MailingServiceID, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method AddRecipient not implemented")
 }
-func (UnimplementedMailingServiceServer) RemoveRecipient(context.Context, *MailingServiceEmail) (*empty.Empty, error) {
+func (UnimplementedMailingServiceServer) RemoveRecipient(context.Context, *MailingServiceID) (*empty.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method RemoveRecipient not implemented")
 }
-func (UnimplementedMailingServiceServer) GetRecipients(context.Context, *empty.Empty) (*MailRecipients, error) {
+func (UnimplementedMailingServiceServer) GetRecipients(context.Context, *GetRecipientsRequest) (*MailRecipients, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetRecipients not implemented")
 }
-func (UnimplementedMailingServiceServer) GetRecipientsByGroup(context.Context, *MailingServiceGroup) (*MailRecipients, error) {
+func (UnimplementedMailingServiceServer) GetRecipientsByGroup(context.Context, *GetRecipientsByGroupRequest) (*MailRecipients, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetRecipientsByGroup not implemented")
 }
 func (UnimplementedMailingServiceServer) SearchRecipients(context.Context, *SearchRequest) (*MailRecipients, error) {
@@ -212,7 +212,7 @@ func _MailingService_AddRecipient_Handler(srv interface{}, ctx context.Context, 
 }
 
 func _MailingService_RemoveRecipient_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(MailingServiceEmail)
+	in := new(MailingServiceID)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -224,13 +224,13 @@ func _MailingService_RemoveRecipient_Handler(srv interface{}, ctx context.Contex
 		FullMethod: "/MailingService/RemoveRecipient",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(MailingServiceServer).RemoveRecipient(ctx, req.(*MailingServiceEmail))
+		return srv.(MailingServiceServer).RemoveRecipient(ctx, req.(*MailingServiceID))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
 func _MailingService_GetRecipients_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(empty.Empty)
+	in := new(GetRecipientsRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -242,13 +242,13 @@ func _MailingService_GetRecipients_Handler(srv interface{}, ctx context.Context,
 		FullMethod: "/MailingService/GetRecipients",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(MailingServiceServer).GetRecipients(ctx, req.(*empty.Empty))
+		return srv.(MailingServiceServer).GetRecipients(ctx, req.(*GetRecipientsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
 func _MailingService_GetRecipientsByGroup_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(MailingServiceGroup)
+	in := new(GetRecipientsByGroupRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -260,7 +260,7 @@ func _MailingService_GetRecipientsByGroup_Handler(srv interface{}, ctx context.C
 		FullMethod: "/MailingService/GetRecipientsByGroup",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(MailingServiceServer).GetRecipientsByGroup(ctx, req.(*MailingServiceGroup))
+		return srv.(MailingServiceServer).GetRecipientsByGroup(ctx, req.(*GetRecipientsByGroupRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }

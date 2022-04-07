@@ -14,6 +14,4 @@ type MailingServiceServer struct {
 
 func NewMailingServiceServer() {}
 
-func (m *MailingServiceServer) Run() {
-
-}
+func (m *MailingServiceServer) Run() {}
