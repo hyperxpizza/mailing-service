@@ -7,7 +7,7 @@ import (
 	"google.golang.org/protobuf/types/known/emptypb"
 )
 
-func (m *MailingServiceServer) CreateGroup(ctx context.Context, req *pb.MailingServiceGroup) (*emptypb.Empty, error) {
+func (m *MailingServiceServer) CreateGroup(ctx context.Context, req *pb.MailingServiceNewGroup) (*emptypb.Empty, error) {
 	return &emptypb.Empty{}, nil
 }
 
@@ -20,6 +20,6 @@ func (m *MailingServiceServer) DeleteGroup(ctx context.Context, req *pb.MailingS
 	return &emptypb.Empty{}, nil
 }
 
-func (m *MailingServiceServer) UpdateGroupName(ctx context.Context, req *pb.MailingServiceGroup) (*emptypb.Empty, error) {
+func (m *MailingServiceServer) UpdateGroupName(ctx context.Context, req *pb.MailingServiceNewGroup) (*emptypb.Empty, error) {
 	return &emptypb.Empty{}, nil
 }

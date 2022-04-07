@@ -27,7 +27,3 @@ func Connect(cfg *config.Config) (*Database, error) {
 
 	return &Database{database}, nil
 }
-
-func (db *Database) InsertRecipient()                   {}
-func (db *Database) GetRecipients()                     {}
-func (db *Database) GetRecipientByUserServiceID(id int) {}
