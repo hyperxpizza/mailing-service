@@ -4,11 +4,31 @@ import (
 	"context"
 
 	pb "github.com/hyperxpizza/mailing-service/pkg/grpc"
+	"github.com/hyperxpizza/mailing-service/pkg/utils"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
 )
 
 func (m *MailingServiceServer) AddRecipient(ctx context.Context, req *pb.NewMailRecipient) (*pb.MailingServiceID, error) {
 	var id pb.MailingServiceID
+
+	m.logger.Debugf("adding new recipient with email: %s", req.Email)
+	err := utils.ValidateEmail(req.Email)
+	if err != nil {
+		m.logger.Debugf("email: %s not valid", req.Email)
+		return nil, status.Error(
+			codes.InvalidArgument,
+			err.Error(),
+		)
+	}
+
+	dbID, err := m.db.InsertMailRecipient(req)
+	if err != nil {
+
+	}
+
+	id.Id = dbID
 	return &id, nil
 }
 

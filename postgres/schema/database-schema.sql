@@ -1,5 +1,5 @@
 
-create table mailGroup (
+create table mailGroups (
     id serial primary key,
     groupName varchar(300) unique not null,
     created timestamp not null,
@@ -21,7 +21,7 @@ create index ix_mailRecipients_tsv on mailRecipients using GIN(tsv);
 --end full text search
 --example search query
 --select 
---  id, email, usersServiceID, created, updated, ts_headling(email, q)
+--  id, email, usersServiceID, created, updated, ts_headline(email, q)
 --from (
 --  select 
 --      id, email, usersServiceID, created, updated, ts_rank(tsv, q) as rank

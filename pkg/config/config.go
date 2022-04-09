@@ -17,12 +17,12 @@ type Config struct {
 	} `json:"database"`
 	SMTP struct {
 		Host     string `json:"host"`
-		Port     string `json:"port"`
+		Port     int    `json:"port"`
 		Password string `json:"password"`
 	} `json:"SMTP"`
 	MailingService struct {
 		Host string `json:"host"`
-		Port string `json:"port"`
+		Port int    `json:"port"`
 	} `json:"mailingService"`
 }
 
