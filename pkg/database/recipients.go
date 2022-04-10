@@ -57,5 +57,26 @@ func (db *Database) InsertMailRecipient(req *pb.NewMailRecipient) (int64, error)
 		return 0, err
 	}
 
+	//insert into recipientGroupMap
+	stmt2, err := tx.Prepare(`insert into recipientGroupMap(id, groupID, recipientID) values(default, $1, $2)`)
+	if err != nil {
+		tx.Rollback()
+		return 0, err
+	}
+
+	defer stmt2.Close()
+
+	_, err = stmt.Exec(groupID, id)
+	if err != nil {
+		tx.Rollback()
+		return 0, err
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		tx.Rollback()
+		return 0, err
+	}
+
 	return id, nil
 }

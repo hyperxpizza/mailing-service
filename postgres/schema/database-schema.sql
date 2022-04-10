@@ -12,7 +12,8 @@ create table mailRecipients (
     usersServiceID integer,
     created timestamp not null,
     updated timestamp not null,
-    tsv tsvector
+    tsv tsvector,
+    confirmed bool not null
 );
 
 -- full text search
