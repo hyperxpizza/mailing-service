@@ -12,6 +12,7 @@ message MailRecipient {
     google.protobuf.Timestamp created = 4;
     google.protobuf.Timestamp updated = 5;
     repeated MailGroup groups = 6;
+    bool confirmed = 7;
 }
 
 message MailGroup {
@@ -83,6 +84,11 @@ message GetRecipientsByGroupRequest{
     string group = 3;
 }
 
+message RecipientConfirmation{
+    string email = 1;
+    string token = 2;
+}
+
 service MailingService {
     rpc AddRecipient(NewMailRecipient) returns (MailingServiceID) {};
     rpc RemoveRecipient(MailingServiceID) returns (google.protobuf.Empty) {};
@@ -90,6 +96,8 @@ service MailingService {
     rpc GetRecipientsByGroup(GetRecipientsByGroupRequest) returns (MailRecipients) {};
     rpc SearchRecipients(SearchRequest) returns (MailRecipients) {};
     rpc CountRecipients(MailingServiceGroup) returns (Count) {};
+    rpc SendConfirmationEmail(MailingServiceEmail) returns (google.protobuf.Empty) {};
+    rpc ConfirmRecipient(RecipientConfirmation) returns (google.protobuf.Empty) {};
 
     rpc CreateGroup(MailingServiceNewGroup) returns (google.protobuf.Empty) {};
     rpc GetGroups(google.protobuf.Empty) returns (MailGroups) {};
