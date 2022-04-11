@@ -32,7 +32,7 @@ func (db *Database) InsertMailRecipient(req *pb.NewMailRecipient) (int64, error)
 	}
 
 	//insert mailRecipient
-	stmt, err := tx.Prepare(`insert into mailRecipients (id, email, usersServiceID, created, updated) values (default, $1, $2, $3, $4) returning id`)
+	stmt, err := tx.Prepare(`insert into mailRecipients (id, email, usersServiceID, created, updated, confirmed) values (default, $1, $2, $3, $4, $5) returning id`)
 	if err != nil {
 		tx.Rollback()
 		return 0, err
@@ -46,7 +46,7 @@ func (db *Database) InsertMailRecipient(req *pb.NewMailRecipient) (int64, error)
 		*usersServiceID = req.UsersServiceID
 	}
 
-	err = stmt.QueryRow(req.Email, usersServiceID, time.Now(), time.Now()).Scan(id)
+	err = stmt.QueryRow(req.Email, usersServiceID, time.Now(), time.Now(), req.Confirmed).Scan(id)
 	if err != nil {
 		tx.Rollback()
 		return 0, err

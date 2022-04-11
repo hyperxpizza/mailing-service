@@ -26,6 +26,7 @@ message NewMailRecipient {
     string email = 1;
     int64 usersServiceID = 2;
     string groupName = 3;
+    bool confirmed = 4;
 }
 
 message MailRecipients{
