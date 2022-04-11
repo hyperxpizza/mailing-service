@@ -13,7 +13,7 @@ create table mailRecipients (
     created timestamp not null,
     updated timestamp not null,
     tsv tsvector,
-    confirmed bool not null
+    confirmed bool,
 );
 
 -- full text search
