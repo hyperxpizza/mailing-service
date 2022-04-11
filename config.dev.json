@@ -1,0 +1,16 @@
+{
+    "database": {
+        "user": "mailingServiceDBuser",
+        "password": "mailingServiceDBpassword",
+        "port": 5432,
+        "name": "mailingServiceDB",
+        "host": "127.0.0.1"
+    },
+    "redis": {
+        "host": "127.0.0.1",
+        "port": 6379,
+        "network": "",
+        "password": "",
+        "db": 0
+    }    
+}
