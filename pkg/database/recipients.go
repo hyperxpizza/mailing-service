@@ -4,14 +4,9 @@ import (
 	"context"
 	"database/sql"
 	"errors"
-	"fmt"
 	"time"
 
 	pb "github.com/hyperxpizza/mailing-service/pkg/grpc"
-)
-
-const (
-	GroupNotFoundError = "group with name: %s does not exist"
 )
 
 var bgContext = context.Background()
@@ -30,7 +25,7 @@ func (db *Database) InsertMailRecipient(req *pb.NewMailRecipient) (int64, error)
 	if err != nil {
 		tx.Rollback()
 		if errors.Is(err, sql.ErrNoRows) {
-			return 0, fmt.Errorf(GroupNotFoundError, req.GroupName)
+			return 0, NewGroupNotFoundError(req.GroupName)
 		} else {
 			return 0, err
 		}
@@ -79,4 +74,28 @@ func (db *Database) InsertMailRecipient(req *pb.NewMailRecipient) (int64, error)
 	}
 
 	return id, nil
+}
+
+func (db *Database) DeleteRecipientByEmail(email string) error {
+
+	tx, err := db.BeginTx(bgContext, nil)
+	if err != nil {
+		return err
+	}
+
+	stmt, err := tx.Prepare(`delete from mailRecipients where email=$1`)
+	if err != nil {
+		return err
+	}
+
+	_, err = stmt.Exec(email)
+	if err != nil {
+		tx.Rollback()
+		if errors.Is(err, sql.ErrNoRows) {
+			return NewRecipientNotFoundError(email)
+		}
+
+		return err
+	}
+	return nil
 }

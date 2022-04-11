@@ -2,7 +2,9 @@ package impl
 
 import (
 	"context"
+	"errors"
 
+	"github.com/hyperxpizza/mailing-service/pkg/database"
 	pb "github.com/hyperxpizza/mailing-service/pkg/grpc"
 	"github.com/hyperxpizza/mailing-service/pkg/utils"
 	"google.golang.org/grpc/codes"
@@ -25,7 +27,18 @@ func (m *MailingServiceServer) AddRecipient(ctx context.Context, req *pb.NewMail
 
 	dbID, err := m.db.InsertMailRecipient(req)
 	if err != nil {
+		var gErr *database.NotFoundError
+		if errors.As(err, &gErr) {
+			return nil, status.Error(
+				codes.NotFound,
+				err.Error(),
+			)
+		}
 
+		return nil, status.Error(
+			codes.Internal,
+			err.Error(),
+		)
 	}
 
 	id.Id = dbID
@@ -33,6 +46,7 @@ func (m *MailingServiceServer) AddRecipient(ctx context.Context, req *pb.NewMail
 }
 
 func (m *MailingServiceServer) RemoveRecipiet(ctx context.Context, req *pb.MailingServiceID) (*emptypb.Empty, error) {
+
 	return &emptypb.Empty{}, nil
 }
 

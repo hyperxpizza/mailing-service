@@ -39,5 +39,5 @@ create index ix_mailRecipients_tsv on mailRecipients using GIN(tsv);
 create table recipientGroupMap (
     id serial primary key,
     groupID integer references mailGroup(id),
-    recipientID integer references mailRecipients(id) 
+    recipientID integer references mailRecipients(id) on delete cascade 
 );
