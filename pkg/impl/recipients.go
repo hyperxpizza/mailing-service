@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 
-	"github.com/hyperxpizza/mailing-service/pkg/database"
+	"github.com/hyperxpizza/mailing-service/pkg/customErrors"
 	pb "github.com/hyperxpizza/mailing-service/pkg/grpc"
 	"github.com/hyperxpizza/mailing-service/pkg/utils"
 	"google.golang.org/grpc/codes"
@@ -27,7 +27,7 @@ func (m *MailingServiceServer) AddRecipient(ctx context.Context, req *pb.NewMail
 
 	dbID, err := m.db.InsertMailRecipient(req)
 	if err != nil {
-		var gErr *database.NotFoundError
+		var gErr *customErrors.NotFoundError
 		if errors.As(err, &gErr) {
 			return nil, status.Error(
 				codes.NotFound,
@@ -45,13 +45,45 @@ func (m *MailingServiceServer) AddRecipient(ctx context.Context, req *pb.NewMail
 	return &id, nil
 }
 
-func (m *MailingServiceServer) RemoveRecipiet(ctx context.Context, req *pb.MailingServiceID) (*emptypb.Empty, error) {
+func (m *MailingServiceServer) RemoveRecipient(ctx context.Context, req *pb.MailingServiceID) (*emptypb.Empty, error) {
+
+	err := m.db.DeleteRecipientByID(req.Id)
+	if err != nil {
+		var idNotFoundErr *customErrors.NotFoundError
+		if errors.As(err, &idNotFoundErr) {
+			return nil, status.Error(
+				codes.NotFound,
+				err.Error(),
+			)
+		}
+		return nil, status.Error(
+			codes.Internal,
+			err.Error(),
+		)
+
+	}
 
 	return &emptypb.Empty{}, nil
 }
 
 func (m *MailingServiceServer) GetRecipient(ctx context.Context, req *pb.MailingServiceID) (*pb.MailRecipient, error) {
 	recipient, err := m.db.GetRecipientByID(req.Id)
+	if err != nil {
+		var idNotFoundErr *customErrors.NotFoundError
+		if errors.As(err, &idNotFoundErr) {
+			return nil, status.Error(
+				codes.NotFound,
+				err.Error(),
+			)
+		}
+
+		return nil, status.Error(
+			codes.Internal,
+			err.Error(),
+		)
+	}
+
+	return recipient, nil
 }
 
 func (m *MailingServiceServer) GetRecipients(ctx context.Context, req *pb.GetRecipientsRequest) (*pb.MailRecipients, error) {
@@ -71,5 +103,21 @@ func (m *MailingServiceServer) SearchRecipients(ctx context.Context, req *pb.Sea
 
 func (m *MailingServiceServer) CountRecipients(ctx context.Context, req *pb.MailingServiceGroup) (*pb.Count, error) {
 	var count pb.Count
+
+	c, err := m.db.CountRecipients(req.Group)
+	if err != nil {
+		var gNotFoundErr *customErrors.NotFoundError
+		if errors.As(err, &gNotFoundErr) {
+			return nil, err
+		}
+
+		return nil, status.Error(
+			codes.Internal,
+			err.Error(),
+		)
+	}
+
+	count.Num = c
+
 	return &count, nil
 }
