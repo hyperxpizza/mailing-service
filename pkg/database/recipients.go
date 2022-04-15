@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/hyperxpizza/mailing-service/pkg/customErrors"
 	pb "github.com/hyperxpizza/mailing-service/pkg/grpc"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
@@ -24,11 +25,11 @@ func (db *Database) InsertMailRecipient(req *pb.NewMailRecipient) (int64, error)
 
 	//check if group exists
 	var groupID int
-	err = tx.QueryRow(`select id from mailGroups where groupName=$1`, req.GroupName).Scan(&groupID)
+	err = tx.QueryRow(`select id from mailGroups where groupName=$1`, strings.ToUpper(req.GroupName)).Scan(&groupID)
 	if err != nil {
 		tx.Rollback()
 		if errors.Is(err, sql.ErrNoRows) {
-			return 0, NewGroupNotFoundError(req.GroupName)
+			return 0, customErrors.NewGroupNotFoundError(req.GroupName)
 		} else {
 			return 0, err
 		}
@@ -84,6 +85,7 @@ func (db *Database) ConfirmRecipient(email string) error {
 	if err != nil {
 		return err
 	}
+	defer stmt.Close()
 
 	_, err = stmt.Exec(email)
 	if err != nil {
@@ -93,28 +95,48 @@ func (db *Database) ConfirmRecipient(email string) error {
 	return nil
 }
 
-func (db *Database) DeleteRecipientByEmail(email string) error {
+func (db *Database) DeleteRecipientByID(id int64) error {
 
 	tx, err := db.BeginTx(bgContext, nil)
 	if err != nil {
 		return err
 	}
 
-	stmt, err := tx.Prepare(`delete from mailRecipients where email=$1`)
+	stmt2, err := tx.Prepare(`delete from recipientGroupMap where recipientID=$1`)
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+	defer stmt2.Close()
+
+	_, err = stmt2.Exec(id)
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	stmt, err := tx.Prepare(`delete from mailRecipients where id=$1`)
 	if err != nil {
 		return err
 	}
 	defer stmt.Close()
 
-	_, err = stmt.Exec(email)
+	_, err = stmt.Exec(id)
 	if err != nil {
 		tx.Rollback()
 		if errors.Is(err, sql.ErrNoRows) {
-			return NewRecipientNotFoundError(email)
+			return customErrors.NewIDNotFoundError(id)
 		}
 
 		return err
 	}
+
+	err = tx.Commit()
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+
 	return nil
 }
 
@@ -142,12 +164,20 @@ func (db *Database) GetRecipientByID(id int64) (*pb.MailRecipient, error) {
 	)
 	if err != nil {
 		tx.Rollback()
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, customErrors.NewIDNotFoundError(id)
+		}
+
 		return nil, err
 	}
 
 	rows, err := tx.Query(`select m.groupID, g.groupName, g.created, g.updated from recipientGroupMap as m join mailGroups as g on g.id=m.groupID where recipientID=$1`, recipient.Id)
 	if err != nil {
 		tx.Rollback()
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, customErrors.NewIDNotFoundError(id)
+		}
+
 		return nil, err
 	}
 
@@ -210,9 +240,20 @@ func (db *Database) CountRecipients(groupName string) (int64, error) {
 	if groupName != "" {
 		query = fmt.Sprintf("%s %s", base, extra)
 		err := db.QueryRow(query, strings.ToUpper(groupName)).Scan(&count)
+		if err != nil {
+			if errors.Is(err, sql.ErrNoRows) {
+				return 0, customErrors.NewGroupNotFoundError(groupName)
+			}
+
+			return 0, err
+		}
 
 	} else {
 		query = base
+		err := db.QueryRow(query).Scan(&count)
+		if err != nil {
+			return 0, err
+		}
 	}
 
 	return count, nil
