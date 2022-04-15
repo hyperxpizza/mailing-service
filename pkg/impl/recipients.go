@@ -50,6 +50,10 @@ func (m *MailingServiceServer) RemoveRecipiet(ctx context.Context, req *pb.Maili
 	return &emptypb.Empty{}, nil
 }
 
+func (m *MailingServiceServer) GetRecipient(ctx context.Context, req *pb.MailingServiceID) (*pb.MailRecipient, error) {
+	recipient, err := m.db.GetRecipientByID(req.Id)
+}
+
 func (m *MailingServiceServer) GetRecipients(ctx context.Context, req *pb.GetRecipientsRequest) (*pb.MailRecipients, error) {
 	var recipients pb.MailRecipients
 	return &recipients, nil

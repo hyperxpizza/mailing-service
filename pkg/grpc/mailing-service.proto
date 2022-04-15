@@ -90,18 +90,39 @@ message RecipientConfirmation{
     string token = 2;
 }
 
+message CheckIfConfirmedRequest {
+    int64 usersServiceID = 1;
+}
+
+message Cofirmed {
+    bool confirmed = 2;
+}
+
+message SendEmailRequest {
+    string fromEmail = 1;
+    string toEmail = 2;
+    string topic = 3;
+    string message = 4;
+}
+
 service MailingService {
     rpc AddRecipient(NewMailRecipient) returns (MailingServiceID) {};
     rpc RemoveRecipient(MailingServiceID) returns (google.protobuf.Empty) {};
+    rpc GetRecipient(MailingServiceID) returns (MailRecipient) {};
     rpc GetRecipients(GetRecipientsRequest) returns (MailRecipients) {};
     rpc GetRecipientsByGroup(GetRecipientsByGroupRequest) returns (MailRecipients) {};
     rpc SearchRecipients(SearchRequest) returns (MailRecipients) {};
     rpc CountRecipients(MailingServiceGroup) returns (Count) {};
+    
+
     rpc SendConfirmationEmail(MailingServiceEmail) returns (google.protobuf.Empty) {};
     rpc ConfirmRecipient(RecipientConfirmation) returns (google.protobuf.Empty) {};
+    rpc CheckIfRecipientIsConfirmed(CheckIfConfirmedRequest) returns (Cofirmed) {};
+
 
     rpc CreateGroup(MailingServiceNewGroup) returns (google.protobuf.Empty) {};
     rpc GetGroups(google.protobuf.Empty) returns (MailGroups) {};
     rpc DeleteGroup(MailingServiceID) returns (google.protobuf.Empty) {};
     rpc UpdateGroupName(MailingServiceNewGroup) returns (google.protobuf.Empty) {};
+ //   rpc AddRecipientToGroup()
 }
