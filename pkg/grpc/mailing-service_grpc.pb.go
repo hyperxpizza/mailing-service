@@ -21,11 +21,15 @@ const _ = grpc.SupportPackageIsVersion7
 type MailingServiceClient interface {
 	AddRecipient(ctx context.Context, in *NewMailRecipient, opts ...grpc.CallOption) (*MailingServiceID, error)
 	RemoveRecipient(ctx context.Context, in *MailingServiceID, opts ...grpc.CallOption) (*empty.Empty, error)
+	GetRecipient(ctx context.Context, in *MailingServiceID, opts ...grpc.CallOption) (*MailRecipient, error)
 	GetRecipients(ctx context.Context, in *GetRecipientsRequest, opts ...grpc.CallOption) (*MailRecipients, error)
 	GetRecipientsByGroup(ctx context.Context, in *GetRecipientsByGroupRequest, opts ...grpc.CallOption) (*MailRecipients, error)
 	SearchRecipients(ctx context.Context, in *SearchRequest, opts ...grpc.CallOption) (*MailRecipients, error)
 	CountRecipients(ctx context.Context, in *MailingServiceGroup, opts ...grpc.CallOption) (*Count, error)
-	CreateGroup(ctx context.Context, in *MailingServiceNewGroup, opts ...grpc.CallOption) (*empty.Empty, error)
+	SendConfirmationEmail(ctx context.Context, in *MailingServiceEmail, opts ...grpc.CallOption) (*empty.Empty, error)
+	ConfirmRecipient(ctx context.Context, in *RecipientConfirmation, opts ...grpc.CallOption) (*empty.Empty, error)
+	CheckIfRecipientIsConfirmed(ctx context.Context, in *CheckIfConfirmedRequest, opts ...grpc.CallOption) (*Cofirmed, error)
+	CreateGroup(ctx context.Context, in *MailingServiceNewGroup, opts ...grpc.CallOption) (*MailingServiceID, error)
 	GetGroups(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*MailGroups, error)
 	DeleteGroup(ctx context.Context, in *MailingServiceID, opts ...grpc.CallOption) (*empty.Empty, error)
 	UpdateGroupName(ctx context.Context, in *MailingServiceNewGroup, opts ...grpc.CallOption) (*empty.Empty, error)
@@ -51,6 +55,15 @@ func (c *mailingServiceClient) AddRecipient(ctx context.Context, in *NewMailReci
 func (c *mailingServiceClient) RemoveRecipient(ctx context.Context, in *MailingServiceID, opts ...grpc.CallOption) (*empty.Empty, error) {
 	out := new(empty.Empty)
 	err := c.cc.Invoke(ctx, "/MailingService/RemoveRecipient", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *mailingServiceClient) GetRecipient(ctx context.Context, in *MailingServiceID, opts ...grpc.CallOption) (*MailRecipient, error) {
+	out := new(MailRecipient)
+	err := c.cc.Invoke(ctx, "/MailingService/GetRecipient", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -93,8 +106,35 @@ func (c *mailingServiceClient) CountRecipients(ctx context.Context, in *MailingS
 	return out, nil
 }
 
-func (c *mailingServiceClient) CreateGroup(ctx context.Context, in *MailingServiceNewGroup, opts ...grpc.CallOption) (*empty.Empty, error) {
+func (c *mailingServiceClient) SendConfirmationEmail(ctx context.Context, in *MailingServiceEmail, opts ...grpc.CallOption) (*empty.Empty, error) {
 	out := new(empty.Empty)
+	err := c.cc.Invoke(ctx, "/MailingService/SendConfirmationEmail", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *mailingServiceClient) ConfirmRecipient(ctx context.Context, in *RecipientConfirmation, opts ...grpc.CallOption) (*empty.Empty, error) {
+	out := new(empty.Empty)
+	err := c.cc.Invoke(ctx, "/MailingService/ConfirmRecipient", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *mailingServiceClient) CheckIfRecipientIsConfirmed(ctx context.Context, in *CheckIfConfirmedRequest, opts ...grpc.CallOption) (*Cofirmed, error) {
+	out := new(Cofirmed)
+	err := c.cc.Invoke(ctx, "/MailingService/CheckIfRecipientIsConfirmed", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *mailingServiceClient) CreateGroup(ctx context.Context, in *MailingServiceNewGroup, opts ...grpc.CallOption) (*MailingServiceID, error) {
+	out := new(MailingServiceID)
 	err := c.cc.Invoke(ctx, "/MailingService/CreateGroup", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -135,11 +175,15 @@ func (c *mailingServiceClient) UpdateGroupName(ctx context.Context, in *MailingS
 type MailingServiceServer interface {
 	AddRecipient(context.Context, *NewMailRecipient) (*MailingServiceID, error)
 	RemoveRecipient(context.Context, *MailingServiceID) (*empty.Empty, error)
+	GetRecipient(context.Context, *MailingServiceID) (*MailRecipient, error)
 	GetRecipients(context.Context, *GetRecipientsRequest) (*MailRecipients, error)
 	GetRecipientsByGroup(context.Context, *GetRecipientsByGroupRequest) (*MailRecipients, error)
 	SearchRecipients(context.Context, *SearchRequest) (*MailRecipients, error)
 	CountRecipients(context.Context, *MailingServiceGroup) (*Count, error)
-	CreateGroup(context.Context, *MailingServiceNewGroup) (*empty.Empty, error)
+	SendConfirmationEmail(context.Context, *MailingServiceEmail) (*empty.Empty, error)
+	ConfirmRecipient(context.Context, *RecipientConfirmation) (*empty.Empty, error)
+	CheckIfRecipientIsConfirmed(context.Context, *CheckIfConfirmedRequest) (*Cofirmed, error)
+	CreateGroup(context.Context, *MailingServiceNewGroup) (*MailingServiceID, error)
 	GetGroups(context.Context, *empty.Empty) (*MailGroups, error)
 	DeleteGroup(context.Context, *MailingServiceID) (*empty.Empty, error)
 	UpdateGroupName(context.Context, *MailingServiceNewGroup) (*empty.Empty, error)
@@ -156,6 +200,9 @@ func (UnimplementedMailingServiceServer) AddRecipient(context.Context, *NewMailR
 func (UnimplementedMailingServiceServer) RemoveRecipient(context.Context, *MailingServiceID) (*empty.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method RemoveRecipient not implemented")
 }
+func (UnimplementedMailingServiceServer) GetRecipient(context.Context, *MailingServiceID) (*MailRecipient, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetRecipient not implemented")
+}
 func (UnimplementedMailingServiceServer) GetRecipients(context.Context, *GetRecipientsRequest) (*MailRecipients, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetRecipients not implemented")
 }
@@ -168,7 +215,16 @@ func (UnimplementedMailingServiceServer) SearchRecipients(context.Context, *Sear
 func (UnimplementedMailingServiceServer) CountRecipients(context.Context, *MailingServiceGroup) (*Count, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CountRecipients not implemented")
 }
-func (UnimplementedMailingServiceServer) CreateGroup(context.Context, *MailingServiceNewGroup) (*empty.Empty, error) {
+func (UnimplementedMailingServiceServer) SendConfirmationEmail(context.Context, *MailingServiceEmail) (*empty.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SendConfirmationEmail not implemented")
+}
+func (UnimplementedMailingServiceServer) ConfirmRecipient(context.Context, *RecipientConfirmation) (*empty.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ConfirmRecipient not implemented")
+}
+func (UnimplementedMailingServiceServer) CheckIfRecipientIsConfirmed(context.Context, *CheckIfConfirmedRequest) (*Cofirmed, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CheckIfRecipientIsConfirmed not implemented")
+}
+func (UnimplementedMailingServiceServer) CreateGroup(context.Context, *MailingServiceNewGroup) (*MailingServiceID, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CreateGroup not implemented")
 }
 func (UnimplementedMailingServiceServer) GetGroups(context.Context, *empty.Empty) (*MailGroups, error) {
@@ -225,6 +281,24 @@ func _MailingService_RemoveRecipient_Handler(srv interface{}, ctx context.Contex
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(MailingServiceServer).RemoveRecipient(ctx, req.(*MailingServiceID))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _MailingService_GetRecipient_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(MailingServiceID)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MailingServiceServer).GetRecipient(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/MailingService/GetRecipient",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MailingServiceServer).GetRecipient(ctx, req.(*MailingServiceID))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -297,6 +371,60 @@ func _MailingService_CountRecipients_Handler(srv interface{}, ctx context.Contex
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(MailingServiceServer).CountRecipients(ctx, req.(*MailingServiceGroup))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _MailingService_SendConfirmationEmail_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(MailingServiceEmail)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MailingServiceServer).SendConfirmationEmail(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/MailingService/SendConfirmationEmail",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MailingServiceServer).SendConfirmationEmail(ctx, req.(*MailingServiceEmail))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _MailingService_ConfirmRecipient_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RecipientConfirmation)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MailingServiceServer).ConfirmRecipient(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/MailingService/ConfirmRecipient",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MailingServiceServer).ConfirmRecipient(ctx, req.(*RecipientConfirmation))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _MailingService_CheckIfRecipientIsConfirmed_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CheckIfConfirmedRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MailingServiceServer).CheckIfRecipientIsConfirmed(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/MailingService/CheckIfRecipientIsConfirmed",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MailingServiceServer).CheckIfRecipientIsConfirmed(ctx, req.(*CheckIfConfirmedRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -389,6 +517,10 @@ var MailingService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _MailingService_RemoveRecipient_Handler,
 		},
 		{
+			MethodName: "GetRecipient",
+			Handler:    _MailingService_GetRecipient_Handler,
+		},
+		{
 			MethodName: "GetRecipients",
 			Handler:    _MailingService_GetRecipients_Handler,
 		},
@@ -403,6 +535,18 @@ var MailingService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "CountRecipients",
 			Handler:    _MailingService_CountRecipients_Handler,
+		},
+		{
+			MethodName: "SendConfirmationEmail",
+			Handler:    _MailingService_SendConfirmationEmail_Handler,
+		},
+		{
+			MethodName: "ConfirmRecipient",
+			Handler:    _MailingService_ConfirmRecipient_Handler,
+		},
+		{
+			MethodName: "CheckIfRecipientIsConfirmed",
+			Handler:    _MailingService_CheckIfRecipientIsConfirmed_Handler,
 		},
 		{
 			MethodName: "CreateGroup",

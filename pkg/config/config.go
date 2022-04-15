@@ -21,9 +21,17 @@ type Config struct {
 		Password string `json:"password"`
 	} `json:"SMTP"`
 	MailingService struct {
-		Host string `json:"host"`
-		Port int    `json:"port"`
+		Host                               string `json:"host"`
+		Port                               int    `json:"port"`
+		ConfirmationTokenExpirationMinutes int64  `json:"confirmationTokenExpirationMinutes"`
 	} `json:"mailingService"`
+	Redis struct {
+		Host     string `json:"host"`
+		Port     int64  `json:"port"`
+		Network  string `json:"network"`
+		Password string `json:"password"`
+		DB       int64  `json:"db"`
+	} `json:"redis"`
 }
 
 func NewConfig(pathToFile string) (*Config, error) {

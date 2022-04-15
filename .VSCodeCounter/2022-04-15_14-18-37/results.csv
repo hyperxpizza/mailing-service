@@ -1,0 +1,17 @@
+"filename", "language", "Go", "Protocol Buffers", "Shell Script", "comment", "blank", "total"
+"/home/hyperxpizza/dev/golang/reusable-microservices/mailing-service/pkg/config/config.go", "Go", 53, 0, 0, 0, 9, 62
+"/home/hyperxpizza/dev/golang/reusable-microservices/mailing-service/pkg/database/database.go", "Go", 22, 0, 0, 0, 8, 30
+"/home/hyperxpizza/dev/golang/reusable-microservices/mailing-service/pkg/database/errors.go", "Go", 25, 0, 0, 0, 7, 32
+"/home/hyperxpizza/dev/golang/reusable-microservices/mailing-service/pkg/database/groups.go", "Go", 1, 0, 0, 0, 1, 2
+"/home/hyperxpizza/dev/golang/reusable-microservices/mailing-service/pkg/database/recipients.go", "Go", 175, 0, 0, 3, 41, 219
+"/home/hyperxpizza/dev/golang/reusable-microservices/mailing-service/pkg/grpc/generate.sh", "Shell Script", 0, 0, 2, 1, 1, 4
+"/home/hyperxpizza/dev/golang/reusable-microservices/mailing-service/pkg/grpc/mailing-service.pb.go", "Go", 1381, 0, 0, 29, 185, 1595
+"/home/hyperxpizza/dev/golang/reusable-microservices/mailing-service/pkg/grpc/mailing-service.proto", "Protocol Buffers", 0, 102, 0, 0, 26, 128
+"/home/hyperxpizza/dev/golang/reusable-microservices/mailing-service/pkg/grpc/mailing-service_grpc.pb.go", "Go", 513, 0, 0, 17, 41, 571
+"/home/hyperxpizza/dev/golang/reusable-microservices/mailing-service/pkg/impl/emails.go", "Go", 98, 0, 0, 3, 24, 125
+"/home/hyperxpizza/dev/golang/reusable-microservices/mailing-service/pkg/impl/groups.go", "Go", 19, 0, 0, 0, 7, 26
+"/home/hyperxpizza/dev/golang/reusable-microservices/mailing-service/pkg/impl/impl.go", "Go", 36, 0, 0, 0, 9, 45
+"/home/hyperxpizza/dev/golang/reusable-microservices/mailing-service/pkg/impl/recipients.go", "Go", 61, 0, 0, 0, 15, 76
+"/home/hyperxpizza/dev/golang/reusable-microservices/mailing-service/pkg/utils/ott.go", "Go", 7, 0, 0, 0, 4, 11
+"/home/hyperxpizza/dev/golang/reusable-microservices/mailing-service/pkg/utils/validator.go", "Go", 15, 0, 0, 0, 5, 20
+"Total", "-", 2406, 102, 2, 53, 383, 2946

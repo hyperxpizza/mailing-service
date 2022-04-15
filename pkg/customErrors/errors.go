@@ -1,14 +1,15 @@
-package database
+package customErrors
 
 import "fmt"
 
 const (
 	GroupNotFoundErrorMsg     = "group with name: %s was not found in the database"
 	RecipientNotFoundErrorMsg = "recipient with email: %s was not found in the database"
+	IDNotFoundError           = "recipient with id: %d was not found in the database"
 )
 
 type NotFoundError struct {
-	Name string
+	Name interface{}
 	Msg  string
 }
 
@@ -27,5 +28,12 @@ func NewRecipientNotFoundError(email string) *NotFoundError {
 	return &NotFoundError{
 		Name: email,
 		Msg:  fmt.Sprintf(RecipientNotFoundErrorMsg, email),
+	}
+}
+
+func NewIDNotFoundError(id int64) *NotFoundError {
+	return &NotFoundError{
+		Name: id,
+		Msg:  fmt.Sprintf(IDNotFoundError, id),
 	}
 }

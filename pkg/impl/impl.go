@@ -3,7 +3,9 @@ package impl
 import (
 	"fmt"
 	"net"
+	"net/smtp"
 
+	"github.com/go-redis/redis/v8"
 	"github.com/hyperxpizza/mailing-service/pkg/config"
 	"github.com/hyperxpizza/mailing-service/pkg/database"
 	pb "github.com/hyperxpizza/mailing-service/pkg/grpc"
@@ -12,9 +14,11 @@ import (
 )
 
 type MailingServiceServer struct {
-	cfg    config.Config
-	db     *database.Database
-	logger logrus.FieldLogger
+	cfg        config.Config
+	db         *database.Database
+	logger     logrus.FieldLogger
+	rdc        redis.Client
+	smtpClient *smtp.Client
 	pb.UnimplementedMailingServiceServer
 }
 
