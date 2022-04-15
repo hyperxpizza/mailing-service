@@ -119,10 +119,8 @@ service MailingService {
     rpc ConfirmRecipient(RecipientConfirmation) returns (google.protobuf.Empty) {};
     rpc CheckIfRecipientIsConfirmed(CheckIfConfirmedRequest) returns (Cofirmed) {};
 
-
-    rpc CreateGroup(MailingServiceNewGroup) returns (google.protobuf.Empty) {};
+    rpc CreateGroup(MailingServiceNewGroup) returns (MailingServiceID) {};
     rpc GetGroups(google.protobuf.Empty) returns (MailGroups) {};
     rpc DeleteGroup(MailingServiceID) returns (google.protobuf.Empty) {};
     rpc UpdateGroupName(MailingServiceNewGroup) returns (google.protobuf.Empty) {};
- //   rpc AddRecipientToGroup()
 }

@@ -29,7 +29,7 @@ type MailingServiceClient interface {
 	SendConfirmationEmail(ctx context.Context, in *MailingServiceEmail, opts ...grpc.CallOption) (*empty.Empty, error)
 	ConfirmRecipient(ctx context.Context, in *RecipientConfirmation, opts ...grpc.CallOption) (*empty.Empty, error)
 	CheckIfRecipientIsConfirmed(ctx context.Context, in *CheckIfConfirmedRequest, opts ...grpc.CallOption) (*Cofirmed, error)
-	CreateGroup(ctx context.Context, in *MailingServiceNewGroup, opts ...grpc.CallOption) (*empty.Empty, error)
+	CreateGroup(ctx context.Context, in *MailingServiceNewGroup, opts ...grpc.CallOption) (*MailingServiceID, error)
 	GetGroups(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*MailGroups, error)
 	DeleteGroup(ctx context.Context, in *MailingServiceID, opts ...grpc.CallOption) (*empty.Empty, error)
 	UpdateGroupName(ctx context.Context, in *MailingServiceNewGroup, opts ...grpc.CallOption) (*empty.Empty, error)
@@ -133,8 +133,8 @@ func (c *mailingServiceClient) CheckIfRecipientIsConfirmed(ctx context.Context, 
 	return out, nil
 }
 
-func (c *mailingServiceClient) CreateGroup(ctx context.Context, in *MailingServiceNewGroup, opts ...grpc.CallOption) (*empty.Empty, error) {
-	out := new(empty.Empty)
+func (c *mailingServiceClient) CreateGroup(ctx context.Context, in *MailingServiceNewGroup, opts ...grpc.CallOption) (*MailingServiceID, error) {
+	out := new(MailingServiceID)
 	err := c.cc.Invoke(ctx, "/MailingService/CreateGroup", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -183,7 +183,7 @@ type MailingServiceServer interface {
 	SendConfirmationEmail(context.Context, *MailingServiceEmail) (*empty.Empty, error)
 	ConfirmRecipient(context.Context, *RecipientConfirmation) (*empty.Empty, error)
 	CheckIfRecipientIsConfirmed(context.Context, *CheckIfConfirmedRequest) (*Cofirmed, error)
-	CreateGroup(context.Context, *MailingServiceNewGroup) (*empty.Empty, error)
+	CreateGroup(context.Context, *MailingServiceNewGroup) (*MailingServiceID, error)
 	GetGroups(context.Context, *empty.Empty) (*MailGroups, error)
 	DeleteGroup(context.Context, *MailingServiceID) (*empty.Empty, error)
 	UpdateGroupName(context.Context, *MailingServiceNewGroup) (*empty.Empty, error)
@@ -224,7 +224,7 @@ func (UnimplementedMailingServiceServer) ConfirmRecipient(context.Context, *Reci
 func (UnimplementedMailingServiceServer) CheckIfRecipientIsConfirmed(context.Context, *CheckIfConfirmedRequest) (*Cofirmed, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CheckIfRecipientIsConfirmed not implemented")
 }
-func (UnimplementedMailingServiceServer) CreateGroup(context.Context, *MailingServiceNewGroup) (*empty.Empty, error) {
+func (UnimplementedMailingServiceServer) CreateGroup(context.Context, *MailingServiceNewGroup) (*MailingServiceID, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CreateGroup not implemented")
 }
 func (UnimplementedMailingServiceServer) GetGroups(context.Context, *empty.Empty) (*MailGroups, error) {
