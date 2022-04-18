@@ -34,7 +34,7 @@ message MailRecipients{
 }
 
 message MailGroups {
-    repeated MailGroups groups = 1;
+    repeated MailGroup groups = 1;
 }
 
 message MailingServiceID {

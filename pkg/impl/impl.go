@@ -1,6 +1,8 @@
 package impl
 
 import (
+	"context"
+	"errors"
 	"fmt"
 	"net"
 	"net/smtp"
@@ -13,17 +15,54 @@ import (
 	"google.golang.org/grpc"
 )
 
+const (
+	redisPONG            = "PONG"
+	redisConnectionError = "cannot connect to redis"
+)
+
 type MailingServiceServer struct {
-	cfg        config.Config
+	cfg        *config.Config
 	db         *database.Database
 	logger     logrus.FieldLogger
-	rdc        redis.Client
+	rdc        *redis.Client
 	smtpClient *smtp.Client
 	pb.UnimplementedMailingServiceServer
 }
 
-func NewMailingServiceServer() (*MailingServiceServer, error) {
-	return &MailingServiceServer{}, nil
+func NewMailingServiceServer(lgr logrus.FieldLogger, c *config.Config) (*MailingServiceServer, error) {
+	db, err := database.Connect(c)
+	if err != nil {
+		return nil, err
+	}
+
+	rdc := redis.NewClient(&redis.Options{
+		Addr: fmt.Sprintf("%s:%d", c.Redis.Host, c.Redis.Port),
+		DB:   int(c.Redis.DB),
+	})
+
+	if err := checkRedisConnection(rdc); err != nil {
+		return nil, err
+	}
+
+	return &MailingServiceServer{
+		cfg:    c,
+		db:     db,
+		logger: lgr,
+		rdc:    rdc,
+	}, nil
+}
+
+func checkRedisConnection(rdc *redis.Client) error {
+	stat, err := rdc.Ping(context.Background()).Result()
+	if err != nil {
+		return err
+	}
+
+	if stat != redisPONG {
+		return errors.New(redisConnectionError)
+	}
+
+	return nil
 }
 
 func (m *MailingServiceServer) Run() {

@@ -6,6 +6,7 @@ import (
 	"net"
 	"testing"
 
+	"github.com/hyperxpizza/mailing-service/pkg/config"
 	pb "github.com/hyperxpizza/mailing-service/pkg/grpc"
 	"github.com/hyperxpizza/mailing-service/pkg/impl"
 	"github.com/sirupsen/logrus"
@@ -18,12 +19,14 @@ const (
 	buffer                = 1024 * 1024
 	target                = "bufnet"
 	configPathNotSetError = "config path is not set"
+	sampleGroupName       = "CUSTOMERS2"
 )
 
 var lis *bufconn.Listener
 var ctx = context.Background()
 var configPathOpt = flag.String("config", "", "path to config file")
-var loglevelOpt = flag.String("loglevel", "", "loglevel")
+var loglevelOpt = flag.String("loglevel", "info", "loglevel")
+var deleteOpt = flag.Bool("delete", true, "delete records after test?")
 
 func mockGrpcServer(configPath string, secure bool) error {
 	lis = bufconn.Listen(buffer)
@@ -34,7 +37,12 @@ func mockGrpcServer(configPath string, secure bool) error {
 		logger.Level = level
 	}
 
-	mailingServiceServer, err := impl.NewMailingServiceServer()
+	cfg, err := config.NewConfig(configPath)
+	if err != nil {
+		panic(err)
+	}
+
+	mailingServiceServer, err := impl.NewMailingServiceServer(logger, cfg)
 	if err != nil {
 		return err
 	}
@@ -42,8 +50,7 @@ func mockGrpcServer(configPath string, secure bool) error {
 	pb.RegisterMailingServiceServer(server, mailingServiceServer)
 
 	if err := server.Serve(lis); err != nil {
-		logger.Fatal(err)
-		return err
+		panic(err)
 	}
 
 	return nil
@@ -57,11 +64,18 @@ func sampleRecipientRequest() *pb.NewMailRecipient {
 	return &pb.NewMailRecipient{
 		Email:          "hyperxpizza@kernelpanic.live",
 		UsersServiceID: 1,
-		GroupName:      "Customers",
+		GroupName:      sampleGroupName,
 		Confirmed:      false,
 	}
 }
 
+func sampleNewGroup() *pb.MailingServiceNewGroup {
+	return &pb.MailingServiceNewGroup{
+		Name: sampleGroupName,
+	}
+}
+
+//go test -v ./tests/ --run TestMailingServer --config=/home/hyperxpizza/dev/golang/reusable-microservices/mailing-service/config.dev.json
 func TestMailingServer(t *testing.T) {
 	flag.Parse()
 
@@ -74,8 +88,37 @@ func TestMailingServer(t *testing.T) {
 
 	client := pb.NewMailingServiceClient(connection)
 
-	t.Run("Add recipients test", func(t *testing.T) {
-		id, err := client.AddRecipient(ctx, sampleRecipientRequest())
+	//insertAndGetRecipient := func
+
+	t.Run("Add recipient test", func(t *testing.T) {
+
+		gId, err := client.CreateGroup(ctx, sampleNewGroup())
 		assert.NoError(t, err)
+
+		sampleRecipient := sampleRecipientRequest()
+
+		id, err := client.AddRecipient(ctx, sampleRecipient)
+		assert.NoError(t, err)
+
+		recipient, err := client.GetRecipient(ctx, id)
+		assert.NoError(t, err)
+
+		assert.Equal(t, recipient.Email, sampleRecipient.Email)
+		assert.Equal(t, recipient.UsersServiceID, sampleRecipient.UsersServiceID)
+		assert.Equal(t, recipient.Confirmed, sampleRecipient.Confirmed)
+
+		checkGroup := func(id int64, name string, group []*pb.MailGroup) {
+			assert.Equal(t, 1, len(group))
+			assert.Equal(t, id, group[0].Id)
+			assert.Equal(t, name, group[0].Name)
+		}
+
+		checkGroup(gId.Id, sampleGroupName, recipient.Groups)
+
+		if *deleteOpt {
+			_, err = client.RemoveRecipient(ctx, id)
+			assert.NoError(t, err)
+		}
+
 	})
 }
