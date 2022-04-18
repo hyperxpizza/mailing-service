@@ -4,6 +4,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/hyperxpizza/mailing-service/pkg/customErrors"
 	pb "github.com/hyperxpizza/mailing-service/pkg/grpc"
 )
 
@@ -49,4 +50,13 @@ func (db *Database) GetGroups() ([]*pb.MailGroup, error) {
 	}
 
 	return mg, nil
+}
+
+func (db *Database) DeleteGroup(id int64) error {
+	_, err := db.Exec(`delete from mailGroups where id=$1`, id)
+	if err != nil {
+		return customErrors.NewIDNotFoundError(id)
+	}
+
+	return nil
 }
