@@ -47,10 +47,10 @@ func (db *Database) InsertMailRecipient(req *pb.NewMailRecipient) (int64, error)
 	if req.UsersServiceID == 0 {
 		usersServiceID = nil
 	} else {
-		*usersServiceID = req.UsersServiceID
+		usersServiceID = &req.UsersServiceID
 	}
 
-	err = stmt.QueryRow(req.Email, usersServiceID, time.Now(), time.Now(), req.Confirmed).Scan(id)
+	err = stmt.QueryRow(req.Email, usersServiceID, time.Now(), time.Now(), req.Confirmed).Scan(&id)
 	if err != nil {
 		tx.Rollback()
 		return 0, err
@@ -65,7 +65,7 @@ func (db *Database) InsertMailRecipient(req *pb.NewMailRecipient) (int64, error)
 
 	defer stmt2.Close()
 
-	_, err = stmt.Exec(groupID, id)
+	_, err = stmt2.Exec(groupID, id)
 	if err != nil {
 		tx.Rollback()
 		return 0, err
@@ -171,6 +171,18 @@ func (db *Database) GetRecipientByID(id int64) (*pb.MailRecipient, error) {
 		return nil, err
 	}
 
+	defer func() {
+		recipient.Created = timestamppb.New(created)
+		recipient.Updated = timestamppb.New(updated)
+		if confirmed.Valid {
+			recipient.Confirmed = confirmed.Bool
+		}
+		recipient.Groups = groups
+		if usID.Valid {
+			recipient.UsersServiceID = usID.Int64
+		}
+	}()
+
 	rows, err := tx.Query(`select m.groupID, g.groupName, g.created, g.updated from recipientGroupMap as m join mailGroups as g on g.id=m.groupID where recipientID=$1`, recipient.Id)
 	if err != nil {
 		tx.Rollback()
@@ -188,6 +200,8 @@ func (db *Database) GetRecipientByID(id int64) (*pb.MailRecipient, error) {
 		err := rows.Scan(
 			&mailGroup.Id,
 			&mailGroup.Name,
+			&gCreated,
+			&gUpdated,
 		)
 		if err != nil {
 			tx.Rollback()
@@ -204,13 +218,6 @@ func (db *Database) GetRecipientByID(id int64) (*pb.MailRecipient, error) {
 		tx.Rollback()
 		return nil, err
 	}
-
-	recipient.Created = timestamppb.New(created)
-	recipient.Updated = timestamppb.New(updated)
-	if confirmed.Valid {
-		recipient.Confirmed = confirmed.Bool
-	}
-	recipient.Groups = groups
 
 	return &recipient, nil
 }
