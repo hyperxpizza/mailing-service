@@ -26,5 +26,27 @@ func (db *Database) InsertGroup(name string) (int64, error) {
 func (db *Database) GetGroups() ([]*pb.MailGroup, error) {
 	var mg []*pb.MailGroup
 
+	rows, err := db.Query(`select * from mailGroups`)
+	if err != nil {
+		return nil, err
+	}
+
+	for rows.Next() {
+		var group pb.MailGroup
+		var created time.Time
+		var updated time.Time
+		err := rows.Scan(
+			&group.Id,
+			&group.Name,
+			&created,
+			&updated,
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		mg = append(mg, &group)
+	}
+
 	return mg, nil
 }
