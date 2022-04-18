@@ -128,4 +128,5 @@ service MailingService {
     rpc GetGroups(google.protobuf.Empty) returns (MailGroups) {};
     rpc DeleteGroup(MailingServiceID) returns (google.protobuf.Empty) {};
     rpc UpdateGroupName(UpdateGroupRequest) returns (google.protobuf.Empty) {};
+    rpc GetGroup(MailingServiceID) returns (MailGroup) {};
 }

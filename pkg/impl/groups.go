@@ -94,3 +94,22 @@ func (m *MailingServiceServer) UpdateGroupName(ctx context.Context, req *pb.Upda
 
 	return &emptypb.Empty{}, nil
 }
+
+func (m *MailingServiceServer) GetGroup(ctx context.Context, req *pb.MailingServiceID) (*pb.MailGroup, error) {
+	group, err := m.db.GetGroup(req.Id)
+	if err != nil {
+		var gErr *customErrors.NotFoundError
+		if errors.As(err, &gErr) {
+			return nil, status.Error(
+				codes.NotFound,
+				err.Error(),
+			)
+		}
+		return nil, status.Error(
+			codes.Internal,
+			err.Error(),
+		)
+	}
+
+	return group, nil
+}

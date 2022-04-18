@@ -33,6 +33,7 @@ type MailingServiceClient interface {
 	GetGroups(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*MailGroups, error)
 	DeleteGroup(ctx context.Context, in *MailingServiceID, opts ...grpc.CallOption) (*empty.Empty, error)
 	UpdateGroupName(ctx context.Context, in *UpdateGroupRequest, opts ...grpc.CallOption) (*empty.Empty, error)
+	GetGroup(ctx context.Context, in *MailingServiceID, opts ...grpc.CallOption) (*MailGroup, error)
 }
 
 type mailingServiceClient struct {
@@ -169,6 +170,15 @@ func (c *mailingServiceClient) UpdateGroupName(ctx context.Context, in *UpdateGr
 	return out, nil
 }
 
+func (c *mailingServiceClient) GetGroup(ctx context.Context, in *MailingServiceID, opts ...grpc.CallOption) (*MailGroup, error) {
+	out := new(MailGroup)
+	err := c.cc.Invoke(ctx, "/MailingService/GetGroup", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // MailingServiceServer is the server API for MailingService service.
 // All implementations must embed UnimplementedMailingServiceServer
 // for forward compatibility
@@ -187,6 +197,7 @@ type MailingServiceServer interface {
 	GetGroups(context.Context, *empty.Empty) (*MailGroups, error)
 	DeleteGroup(context.Context, *MailingServiceID) (*empty.Empty, error)
 	UpdateGroupName(context.Context, *UpdateGroupRequest) (*empty.Empty, error)
+	GetGroup(context.Context, *MailingServiceID) (*MailGroup, error)
 	mustEmbedUnimplementedMailingServiceServer()
 }
 
@@ -235,6 +246,9 @@ func (UnimplementedMailingServiceServer) DeleteGroup(context.Context, *MailingSe
 }
 func (UnimplementedMailingServiceServer) UpdateGroupName(context.Context, *UpdateGroupRequest) (*empty.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UpdateGroupName not implemented")
+}
+func (UnimplementedMailingServiceServer) GetGroup(context.Context, *MailingServiceID) (*MailGroup, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetGroup not implemented")
 }
 func (UnimplementedMailingServiceServer) mustEmbedUnimplementedMailingServiceServer() {}
 
@@ -501,6 +515,24 @@ func _MailingService_UpdateGroupName_Handler(srv interface{}, ctx context.Contex
 	return interceptor(ctx, in, info, handler)
 }
 
+func _MailingService_GetGroup_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(MailingServiceID)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MailingServiceServer).GetGroup(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/MailingService/GetGroup",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MailingServiceServer).GetGroup(ctx, req.(*MailingServiceID))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // MailingService_ServiceDesc is the grpc.ServiceDesc for MailingService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -563,6 +595,10 @@ var MailingService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "UpdateGroupName",
 			Handler:    _MailingService_UpdateGroupName_Handler,
+		},
+		{
+			MethodName: "GetGroup",
+			Handler:    _MailingService_GetGroup_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
