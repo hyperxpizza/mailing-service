@@ -13,6 +13,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/test/bufconn"
+	"google.golang.org/protobuf/types/known/emptypb"
 )
 
 const (
@@ -118,7 +119,34 @@ func TestMailingServer(t *testing.T) {
 		if *deleteOpt {
 			_, err = client.RemoveRecipient(ctx, id)
 			assert.NoError(t, err)
+
+			_, err = client.DeleteGroup(ctx, gId)
+			assert.NoError(t, err)
+		}
+	})
+
+	t.Run("Add group test", func(t *testing.T) {
+		sg := sampleNewGroup()
+		gId, err := client.CreateGroup(ctx, sg)
+		assert.NoError(t, err)
+
+		groups, err := client.GetGroups(ctx, &emptypb.Empty{})
+		assert.NoError(t, err)
+		assert.Greater(t, len(groups.Groups), 0)
+
+		var group *pb.MailGroup
+		group = nil
+		for _, g := range groups.Groups {
+			if g.Id == gId.Id {
+				group = g
+			}
 		}
 
+		assert.Equal(t, group.Name, sg.Name)
+
+		if *deleteOpt {
+			_, err := client.DeleteGroup(ctx, gId)
+			assert.NoError(t, err)
+		}
 	})
 }
