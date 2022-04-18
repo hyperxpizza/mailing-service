@@ -33,6 +33,15 @@ func (m *MailingServiceServer) CreateGroup(ctx context.Context, req *pb.MailingS
 
 func (m *MailingServiceServer) GetGroups(ctx context.Context, req *emptypb.Empty) (*pb.MailGroups, error) {
 	var groups pb.MailGroups
+	var err error
+	groups.Groups, err = m.db.GetGroups()
+	if err != nil {
+		return nil, status.Error(
+			codes.Internal,
+			err.Error(),
+		)
+	}
+
 	return &groups, nil
 }
 
