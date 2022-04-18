@@ -105,6 +105,11 @@ message SendEmailRequest {
     string message = 4;
 }
 
+message UpdateGroupRequest {
+    int64 id = 1;
+    string newName = 2;
+}
+
 service MailingService {
     rpc AddRecipient(NewMailRecipient) returns (MailingServiceID) {};
     rpc RemoveRecipient(MailingServiceID) returns (google.protobuf.Empty) {};
@@ -122,5 +127,5 @@ service MailingService {
     rpc CreateGroup(MailingServiceNewGroup) returns (MailingServiceID) {};
     rpc GetGroups(google.protobuf.Empty) returns (MailGroups) {};
     rpc DeleteGroup(MailingServiceID) returns (google.protobuf.Empty) {};
-    rpc UpdateGroupName(MailingServiceNewGroup) returns (google.protobuf.Empty) {};
+    rpc UpdateGroupName(UpdateGroupRequest) returns (google.protobuf.Empty) {};
 }

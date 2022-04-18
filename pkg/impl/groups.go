@@ -67,6 +67,30 @@ func (m *MailingServiceServer) DeleteGroup(ctx context.Context, req *pb.MailingS
 	return &emptypb.Empty{}, nil
 }
 
-func (m *MailingServiceServer) UpdateGroupName(ctx context.Context, req *pb.MailingServiceNewGroup) (*emptypb.Empty, error) {
+func (m *MailingServiceServer) UpdateGroupName(ctx context.Context, req *pb.UpdateGroupRequest) (*emptypb.Empty, error) {
+
+	err := utils.ValidateNewGroup(req.NewName)
+	if err != nil {
+		return nil, status.Error(
+			codes.InvalidArgument,
+			err.Error(),
+		)
+	}
+
+	err = m.db.UpdateGroupName(req.NewName, req.Id)
+	if err != nil {
+		var gErr *customErrors.NotFoundError
+		if errors.As(err, &gErr) {
+			return nil, status.Error(
+				codes.NotFound,
+				err.Error(),
+			)
+		}
+		return nil, status.Error(
+			codes.Internal,
+			err.Error(),
+		)
+	}
+
 	return &emptypb.Empty{}, nil
 }

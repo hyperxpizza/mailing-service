@@ -1,6 +1,8 @@
 package database
 
 import (
+	"database/sql"
+	"errors"
 	"strings"
 	"time"
 
@@ -55,8 +57,24 @@ func (db *Database) GetGroups() ([]*pb.MailGroup, error) {
 func (db *Database) DeleteGroup(id int64) error {
 	_, err := db.Exec(`delete from mailGroups where id=$1`, id)
 	if err != nil {
-		return customErrors.NewIDNotFoundError(id)
+		if errors.Is(err, sql.ErrNoRows) {
+			return customErrors.NewIDNotFoundError(id)
+		}
+
+		return err
 	}
 
+	return nil
+}
+
+func (db *Database) UpdateGroupName(newName string, id int64) error {
+	_, err := db.Exec(`update mailGroups set groupName=$1, updated=$2 where id=$3`, newName, time.Now(), id)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return customErrors.NewIDNotFoundError(id)
+		}
+
+		return err
+	}
 	return nil
 }

@@ -32,7 +32,7 @@ type MailingServiceClient interface {
 	CreateGroup(ctx context.Context, in *MailingServiceNewGroup, opts ...grpc.CallOption) (*MailingServiceID, error)
 	GetGroups(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*MailGroups, error)
 	DeleteGroup(ctx context.Context, in *MailingServiceID, opts ...grpc.CallOption) (*empty.Empty, error)
-	UpdateGroupName(ctx context.Context, in *MailingServiceNewGroup, opts ...grpc.CallOption) (*empty.Empty, error)
+	UpdateGroupName(ctx context.Context, in *UpdateGroupRequest, opts ...grpc.CallOption) (*empty.Empty, error)
 }
 
 type mailingServiceClient struct {
@@ -160,7 +160,7 @@ func (c *mailingServiceClient) DeleteGroup(ctx context.Context, in *MailingServi
 	return out, nil
 }
 
-func (c *mailingServiceClient) UpdateGroupName(ctx context.Context, in *MailingServiceNewGroup, opts ...grpc.CallOption) (*empty.Empty, error) {
+func (c *mailingServiceClient) UpdateGroupName(ctx context.Context, in *UpdateGroupRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
 	out := new(empty.Empty)
 	err := c.cc.Invoke(ctx, "/MailingService/UpdateGroupName", in, out, opts...)
 	if err != nil {
@@ -186,7 +186,7 @@ type MailingServiceServer interface {
 	CreateGroup(context.Context, *MailingServiceNewGroup) (*MailingServiceID, error)
 	GetGroups(context.Context, *empty.Empty) (*MailGroups, error)
 	DeleteGroup(context.Context, *MailingServiceID) (*empty.Empty, error)
-	UpdateGroupName(context.Context, *MailingServiceNewGroup) (*empty.Empty, error)
+	UpdateGroupName(context.Context, *UpdateGroupRequest) (*empty.Empty, error)
 	mustEmbedUnimplementedMailingServiceServer()
 }
 
@@ -233,7 +233,7 @@ func (UnimplementedMailingServiceServer) GetGroups(context.Context, *empty.Empty
 func (UnimplementedMailingServiceServer) DeleteGroup(context.Context, *MailingServiceID) (*empty.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DeleteGroup not implemented")
 }
-func (UnimplementedMailingServiceServer) UpdateGroupName(context.Context, *MailingServiceNewGroup) (*empty.Empty, error) {
+func (UnimplementedMailingServiceServer) UpdateGroupName(context.Context, *UpdateGroupRequest) (*empty.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UpdateGroupName not implemented")
 }
 func (UnimplementedMailingServiceServer) mustEmbedUnimplementedMailingServiceServer() {}
@@ -484,7 +484,7 @@ func _MailingService_DeleteGroup_Handler(srv interface{}, ctx context.Context, d
 }
 
 func _MailingService_UpdateGroupName_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(MailingServiceNewGroup)
+	in := new(UpdateGroupRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -496,7 +496,7 @@ func _MailingService_UpdateGroupName_Handler(srv interface{}, ctx context.Contex
 		FullMethod: "/MailingService/UpdateGroupName",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(MailingServiceServer).UpdateGroupName(ctx, req.(*MailingServiceNewGroup))
+		return srv.(MailingServiceServer).UpdateGroupName(ctx, req.(*UpdateGroupRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
