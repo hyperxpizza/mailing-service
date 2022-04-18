@@ -164,5 +164,13 @@ func TestMailingServer(t *testing.T) {
 		_, err = client.UpdateGroupName(ctx, &req)
 		assert.NoError(t, err)
 
+		updatedGroup, err := client.GetGroup(ctx, gId)
+		assert.NoError(t, err)
+		assert.Equal(t, updatedGroup.Name, updatedGroupName)
+
+		if *deleteOpt {
+			_, err := client.DeleteGroup(ctx, gId)
+			assert.NoError(t, err)
+		}
 	})
 }
