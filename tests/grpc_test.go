@@ -149,4 +149,28 @@ func TestMailingServer(t *testing.T) {
 			assert.NoError(t, err)
 		}
 	})
+
+	t.Run("Update group test", func(t *testing.T) {
+		sg := sampleNewGroup()
+		gId, err := client.CreateGroup(ctx, sg)
+		assert.NoError(t, err)
+
+		updatedGroupName := "updated group name"
+		req := pb.UpdateGroupRequest{
+			Id:      gId.Id,
+			NewName: updatedGroupName,
+		}
+
+		_, err = client.UpdateGroupName(ctx, &req)
+		assert.NoError(t, err)
+
+		updatedGroup, err := client.GetGroup(ctx, gId)
+		assert.NoError(t, err)
+		assert.Equal(t, updatedGroup.Name, updatedGroupName)
+
+		if *deleteOpt {
+			_, err := client.DeleteGroup(ctx, gId)
+			assert.NoError(t, err)
+		}
+	})
 }
