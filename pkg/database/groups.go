@@ -59,7 +59,7 @@ func (db *Database) GetGroup(id int64) (*pb.MailGroup, error) {
 	var group pb.MailGroup
 	var created time.Time
 	var updated time.Time
-	err := db.QueryRow(`select * from mailGroups where id=$1`).Scan(
+	err := db.QueryRow(`select * from mailGroups where id=$1`, id).Scan(
 		&group.Id,
 		&group.Name,
 		&created,
