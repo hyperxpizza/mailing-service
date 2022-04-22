@@ -88,11 +88,34 @@ func (m *MailingServiceServer) GetRecipient(ctx context.Context, req *pb.Mailing
 
 func (m *MailingServiceServer) GetRecipients(ctx context.Context, req *pb.GetRecipientsRequest) (*pb.MailRecipients, error) {
 	var recipients pb.MailRecipients
+
+	rec, err := m.db.GetRecipients(req)
+	if err != nil {
+		return nil, status.Error(
+			codes.Internal,
+			err.Error(),
+		)
+	}
+	recipients.MailRecipients = rec
+
 	return &recipients, nil
 }
 
 func (m *MailingServiceServer) GetRecipientsByGroup(ctx context.Context, req *pb.GetRecipientsByGroupRequest) (*pb.MailRecipients, error) {
 	var recipients pb.MailRecipients
+	rec, err := m.db.GetRecipientsByGroup(req)
+	if err != nil {
+		var gNotFoundErr *customErrors.NotFoundError
+		if errors.As(err, &gNotFoundErr) {
+			return nil, err
+		}
+
+		return nil, status.Error(
+			codes.Internal,
+			err.Error(),
+		)
+	}
+	recipients.MailRecipients = rec
 	return &recipients, nil
 }
 

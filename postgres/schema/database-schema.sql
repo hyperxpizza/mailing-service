@@ -51,6 +51,8 @@ create table recipientGroupMap (
 -- get recipients with order and pagination
 --select id, email, usersServiceID, created, updated, confirmed from mailRecipients order by $1 limit $2 offset $3;
 
+-- get recipients with order and pagination where group
+-- select r.id, r.email, r.usersServiceID, r.created, r.updated, r.confirmed from mailRecipients as r join recipientGroupMap as m on r.id = m.recipientID join mailGroups as g on m.groupID = g.id where g.groupName = $1 order by $2 limit $3 offset $4;
 
 insert into mailRecipients(id, email, usersServiceID, created, updated, confirmed) values (default, 'hyperxpizza@gmail.com', 1, default, default, false);
 insert into mailRecipients(id, email, usersServiceID, created, updated, confirmed) values (default, 'hyperxpizza2@gmail.com', 2, default, default, false);
