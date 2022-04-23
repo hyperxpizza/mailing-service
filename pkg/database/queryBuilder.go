@@ -64,3 +64,7 @@ func getFragmentAndAllowedVars(group, order string, limit, offset int64) (string
 
 	return fragment, allowedVars
 }
+
+func buildSearchQuery(phrase string, limit, offset int64) (string, []interface{}) {
+
+}

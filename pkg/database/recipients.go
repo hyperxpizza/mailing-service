@@ -304,3 +304,9 @@ func (db *Database) GetRecipientsByGroup(req *pb.GetRecipientsByGroupRequest) ([
 
 	return recipients, nil
 }
+
+func (db *Database) SearchRecipients(req *pb.SearchRequest) ([]*pb.MailRecipient, error) {
+	var recipients []*pb.MailRecipient
+
+	return recipients, nil
+}

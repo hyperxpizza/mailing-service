@@ -9,6 +9,7 @@ import (
 	"github.com/hyperxpizza/mailing-service/pkg/config"
 	pb "github.com/hyperxpizza/mailing-service/pkg/grpc"
 	"github.com/hyperxpizza/mailing-service/pkg/impl"
+	smtpmock "github.com/mocktools/go-smtp-mock"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/grpc"
@@ -21,6 +22,7 @@ const (
 	target                = "bufnet"
 	configPathNotSetError = "config path is not set"
 	sampleGroupName       = "CUSTOMERS2"
+	mockSmtpPort          = 7777
 )
 
 var lis *bufconn.Listener
@@ -57,6 +59,21 @@ func mockGrpcServer(configPath string, secure bool) error {
 	return nil
 }
 
+func mockSmtpServer() error {
+	server := smtpmock.New(smtpmock.ConfigurationAttr{
+		HostAddress:       "127.0.0.1",
+		PortNumber:        mockSmtpPort,
+		LogToStdout:       true,
+		LogServerActivity: true,
+	})
+
+	if err := server.Start(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func bufDialer(context.Context, string) (net.Conn, error) {
 	return lis.Dial()
 }
@@ -81,6 +98,7 @@ func TestMailingServer(t *testing.T) {
 	flag.Parse()
 
 	go mockGrpcServer(*configPathOpt, false)
+	go mockSmtpServer()
 
 	connection, err := grpc.DialContext(ctx, target, grpc.WithContextDialer(bufDialer), grpc.WithInsecure())
 	assert.NoError(t, err)
