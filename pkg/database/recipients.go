@@ -76,6 +76,13 @@ func (db *Database) InsertMailRecipient(req *pb.NewMailRecipient) (int64, error)
 		return 0, err
 	}
 
+	//set tsv - search vector
+	_, err = tx.Exec(`update mailRecipients set tsv = setweight(to_tsvector(email), 'A') where id=$1`, id)
+	if err != nil {
+		tx.Rollback()
+		return 0, err
+	}
+
 	err = tx.Commit()
 	if err != nil {
 		tx.Rollback()

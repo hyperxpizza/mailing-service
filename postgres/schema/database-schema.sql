@@ -17,7 +17,7 @@ create table mailRecipients (
 );
 
 -- full text search
-update mailRecipients set tsv = setweight(to_tsvector(email), 'A');
+--update mailRecipients set tsv = setweight(to_tsvector(email), 'A');
 create index ix_mailRecipients_tsv on mailRecipients using GIN(tsv);
 --end full text search
 --example search query
