@@ -3,10 +3,11 @@ package database
 import "fmt"
 
 const (
-	orderBase  = " order by $%d"
-	limitBase  = " limit $%d"
-	offsetBase = " offset $%d"
-	whereGroup = "where g.groupName=$%d"
+	orderBase       = " order by $%d"
+	limitBase       = " limit $%d"
+	offsetBase      = " offset $%d"
+	whereGroup      = "where g.groupName=$%d"
+	whereEmailIlike = "where email=$%d"
 )
 
 func buildGetRecipientsQuery(order string, limit, offset int64) (string, []interface{}) {
@@ -65,6 +66,39 @@ func getFragmentAndAllowedVars(group, order string, limit, offset int64) (string
 	return fragment, allowedVars
 }
 
-func buildSearchQuery(phrase string, limit, offset int64) (string, []interface{}) {
+func buildSearchQuery(phrase, order string, limit, offset int64) (string, []interface{}) {
+	fragment := ""
+	counter := 0
+	var allowedVars []interface{}
 
+	if phrase != "" {
+		counter++
+		ilikeString := fmt.Sprintf(whereEmailIlike, counter)
+		fragment += ilikeString
+		allowedVars = append(allowedVars, phrase)
+	}
+
+	if order != "" {
+		counter++
+		orderString := fmt.Sprintf(orderBase, counter)
+		fragment += orderString
+		allowedVars = append(allowedVars, order)
+
+	}
+
+	if limit > 0 {
+		counter++
+		limiString := fmt.Sprintf(limitBase, counter)
+		fragment += limiString
+		allowedVars = append(allowedVars, limit)
+	}
+
+	if offset > 0 {
+		counter++
+		offsetString := fmt.Sprintf(offsetBase, counter)
+		fragment += offsetString
+		allowedVars = append(allowedVars, offsetString)
+	}
+
+	return fragment, allowedVars
 }

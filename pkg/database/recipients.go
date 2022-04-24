@@ -76,13 +76,6 @@ func (db *Database) InsertMailRecipient(req *pb.NewMailRecipient) (int64, error)
 		return 0, err
 	}
 
-	//set tsv - search vector
-	_, err = tx.Exec(`update mailRecipients set tsv = setweight(to_tsvector(email), 'A') where id=$1`, id)
-	if err != nil {
-		tx.Rollback()
-		return 0, err
-	}
-
 	err = tx.Commit()
 	if err != nil {
 		tx.Rollback()
@@ -313,7 +306,20 @@ func (db *Database) GetRecipientsByGroup(req *pb.GetRecipientsByGroupRequest) ([
 }
 
 func (db *Database) SearchRecipients(req *pb.SearchRequest) ([]*pb.MailRecipient, error) {
-	var recipients []*pb.MailRecipient
+	query, allowedVars := buildSearchQuery(req.Query, req.Order.String(), req.Pagination.Limit, req.Pagination.Offset)
+	rows, err := db.Query(query, allowedVars...)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, customErrors.NewNoResultsError(req.Query)
+		}
+
+		return nil, err
+	}
+
+	recipients, err := scanRecipients(rows)
+	if err != nil {
+		return nil, err
+	}
 
 	return recipients, nil
 }
