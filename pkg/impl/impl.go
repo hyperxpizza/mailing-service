@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net"
 	"net/smtp"
+	"time"
 
 	"github.com/go-redis/redis/v8"
 	"github.com/hyperxpizza/mailing-service/pkg/config"
@@ -44,11 +45,24 @@ func NewMailingServiceServer(lgr logrus.FieldLogger, c *config.Config) (*Mailing
 		return nil, err
 	}
 
+	smtpAddr := fmt.Sprintf("%s:%d", c.SMTP.Host, c.SMTP.Port)
+	to := time.Duration(2) * time.Second
+	smtpConn, err := net.DialTimeout("tcp", smtpAddr, to)
+	if err != nil {
+		return nil, err
+	}
+
+	smtpClient, err := smtp.NewClient(smtpConn, c.SMTP.Host)
+	if err != nil {
+		return nil, err
+	}
+
 	return &MailingServiceServer{
-		cfg:    c,
-		db:     db,
-		logger: lgr,
-		rdc:    rdc,
+		cfg:        c,
+		db:         db,
+		logger:     lgr,
+		rdc:        rdc,
+		smtpClient: smtpClient,
 	}, nil
 }
 

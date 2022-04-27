@@ -3,16 +3,17 @@ package database
 import "fmt"
 
 const (
-	orderBase  = " order by $%d"
-	limitBase  = " limit $%d"
-	offsetBase = " offset $%d"
-	whereGroup = "where g.groupName=$%d"
+	orderBase       = " order by $%d"
+	limitBase       = " limit $%d"
+	offsetBase      = " offset $%d"
+	whereGroup      = " where g.groupName=$%d"
+	whereEmailIlike = " where email ilike $%d"
 )
 
 func buildGetRecipientsQuery(order string, limit, offset int64) (string, []interface{}) {
 
 	fragment, allowedVars := getFragmentAndAllowedVars("", order, limit, offset)
-	query := fmt.Sprintf("%s %s", getRecipientsBase, fragment)
+	query := fmt.Sprintf("%s%s", getRecipientsBase, fragment)
 	return query, allowedVars
 }
 
@@ -25,7 +26,7 @@ func buildGetRecipientsWhereGroupQuery(order, group string, limit, offset int64)
 		base = getRecipientsBaseGroupName
 	}
 
-	query := fmt.Sprintf("%s %s", base, fragment)
+	query := fmt.Sprintf("%s%s", base, fragment)
 	return query, allowedVars
 }
 
@@ -55,12 +56,51 @@ func getFragmentAndAllowedVars(group, order string, limit, offset int64) (string
 		allowedVars = append(allowedVars, limit)
 	}
 
-	if offset > 0 {
+	if offset >= 0 {
 		counter++
 		offsetString := fmt.Sprintf(offsetBase, counter)
 		fragment += offsetString
-		allowedVars = append(allowedVars, offsetString)
+		allowedVars = append(allowedVars, offset)
 	}
 
 	return fragment, allowedVars
+}
+
+func buildSearchQuery(phrase, order string, limit, offset int64) (string, []interface{}) {
+	fragment := ""
+	counter := 0
+	var allowedVars []interface{}
+
+	if phrase != "" {
+		counter++
+		ilikeString := fmt.Sprintf(whereEmailIlike, counter)
+		fragment += ilikeString
+		allowedVars = append(allowedVars, "%"+phrase+"%")
+	}
+
+	if order != "" {
+		counter++
+		orderString := fmt.Sprintf(orderBase, counter)
+		fragment += orderString
+		allowedVars = append(allowedVars, order)
+
+	}
+
+	if limit > 0 {
+		counter++
+		limiString := fmt.Sprintf(limitBase, counter)
+		fragment += limiString
+		allowedVars = append(allowedVars, limit)
+	}
+
+	if offset >= 0 {
+		counter++
+		offsetString := fmt.Sprintf(offsetBase, counter)
+		fragment += offsetString
+		allowedVars = append(allowedVars, offset)
+	}
+
+	query := getRecipientsBase + fragment
+
+	return query, allowedVars
 }

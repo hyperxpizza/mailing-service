@@ -12,5 +12,10 @@
         "network": "",
         "password": "",
         "db": 0
+    },
+    "SMTP": {
+        "host": "127.0.0.1",
+        "port": 7777,
+        "confirmationTokenExpirationMinutes": 120
     }    
 }

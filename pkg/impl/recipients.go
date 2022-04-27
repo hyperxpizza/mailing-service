@@ -107,7 +107,10 @@ func (m *MailingServiceServer) GetRecipientsByGroup(ctx context.Context, req *pb
 	if err != nil {
 		var gNotFoundErr *customErrors.NotFoundError
 		if errors.As(err, &gNotFoundErr) {
-			return nil, err
+			return nil, status.Error(
+				codes.NotFound,
+				err.Error(),
+			)
 		}
 
 		return nil, status.Error(
@@ -121,6 +124,24 @@ func (m *MailingServiceServer) GetRecipientsByGroup(ctx context.Context, req *pb
 
 func (m *MailingServiceServer) SearchRecipients(ctx context.Context, req *pb.SearchRequest) (*pb.MailRecipients, error) {
 	var recipients pb.MailRecipients
+	rec, err := m.db.SearchRecipients(req)
+	if err != nil {
+		var noResultsErr *customErrors.NoResultsError
+		if errors.As(err, &noResultsErr) {
+			return nil, status.Error(
+				codes.NotFound,
+				err.Error(),
+			)
+		}
+
+		return nil, status.Error(
+			codes.Internal,
+			err.Error(),
+		)
+	}
+
+	recipients.MailRecipients = rec
+
 	return &recipients, nil
 }
 

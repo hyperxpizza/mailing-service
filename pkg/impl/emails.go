@@ -3,8 +3,10 @@ package impl
 import (
 	"context"
 	"database/sql"
+	"encoding/base64"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/go-redis/redis/v8"
@@ -21,6 +23,8 @@ const (
 	tokenMismatchError     = "tokens are not matching"
 	recipientNotFoundError = "recipient was not found in the database"
 )
+
+var replacer = strings.NewReplacer("\r\n", "", "\r", "", "\n", "", "%0a", "", "%0d", "")
 
 func (m *MailingServiceServer) SendConfirmationEmail(ctx context.Context, req *pb.MailingServiceEmail) (*emptypb.Empty, error) {
 	m.logger.Infof("sending confirmation to")
@@ -51,7 +55,6 @@ func (m *MailingServiceServer) SendConfirmationEmail(ctx context.Context, req *p
 	go m.rdc.Set(ctx, key, confToken, exp)
 
 	//send confirmation email
-
 	return &emptypb.Empty{}, nil
 }
 
@@ -121,4 +124,41 @@ func (m *MailingServiceServer) CheckIfRecipientIsConfirmed(ctx context.Context, 
 	confirmed.Confirmed = *conf
 
 	return &confirmed, nil
+}
+
+func (m *MailingServiceServer) SendMail(addr, from, subject, body string, to []string) error {
+	if err := m.smtpClient.Mail(replacer.Replace(from)); err != nil {
+		return err
+	}
+
+	for i := range to {
+		to[i] = replacer.Replace(to[i])
+		if err := m.smtpClient.Rcpt(to[i]); err != nil {
+			return err
+		}
+	}
+
+	writer, err := m.smtpClient.Data()
+	if err != nil {
+		return err
+	}
+
+	msg := "To: " + strings.Join(to, ",") + "\r\n" +
+		"From: " + from + "\r\n" +
+		"Subject: " + subject + "\r\n" +
+		`Content-Type: text/html; charset="UTF-8"\r\n` +
+		"Content-Transfer-Encoding: base64\r\n" +
+		"\r\n" + base64.StdEncoding.EncodeToString([]byte(body))
+
+	if _, err := writer.Write([]byte(msg)); err != nil {
+		return err
+	}
+
+	if err := writer.Close(); err != nil {
+		return err
+	}
+
+	m.smtpClient.Quit()
+
+	return nil
 }

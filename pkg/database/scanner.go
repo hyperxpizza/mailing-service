@@ -42,6 +42,5 @@ func scanRecipients(rows *sql.Rows) ([]*pb.MailRecipient, error) {
 		recipients = append(recipients, &recipient)
 
 	}
-
 	return recipients, nil
 }

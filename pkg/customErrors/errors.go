@@ -6,6 +6,7 @@ const (
 	GroupNotFoundErrorMsg     = "group with name: %s was not found in the database"
 	RecipientNotFoundErrorMsg = "recipient with email: %s was not found in the database"
 	IDNotFoundError           = "recipient with id: %d was not found in the database"
+	NoRecipientsFoundError    = "no recipients found. search phrase: %s"
 )
 
 type NotFoundError struct {
@@ -35,5 +36,21 @@ func NewIDNotFoundError(id int64) *NotFoundError {
 	return &NotFoundError{
 		Name: id,
 		Msg:  fmt.Sprintf(IDNotFoundError, id),
+	}
+}
+
+type NoResultsError struct {
+	SearchPhrase string
+	Msg          string
+}
+
+func (e *NoResultsError) Error() string {
+	return e.Msg
+}
+
+func NewNoResultsError(searchPhrase string) *NoResultsError {
+	return &NoResultsError{
+		SearchPhrase: searchPhrase,
+		Msg:          fmt.Sprintf(NoRecipientsFoundError, searchPhrase),
 	}
 }

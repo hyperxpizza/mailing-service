@@ -55,7 +55,8 @@ message MailingServiceNewGroup {
 
 message SearchRequest {
     string query = 1;
-    Pagination pagination = 2;
+    Order order = 2;
+    Pagination pagination = 3;
 }
 
 message Count {
