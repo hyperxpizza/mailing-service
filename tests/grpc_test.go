@@ -107,8 +107,6 @@ func TestMailingServer(t *testing.T) {
 
 	client := pb.NewMailingServiceClient(connection)
 
-	//insertAndGetRecipient := func
-
 	t.Run("Add recipient test", func(t *testing.T) {
 
 		gId, err := client.CreateGroup(ctx, sampleNewGroup())
@@ -190,5 +188,25 @@ func TestMailingServer(t *testing.T) {
 			_, err := client.DeleteGroup(ctx, gId)
 			assert.NoError(t, err)
 		}
+	})
+
+	t.Run("Get recipients test", func(t *testing.T) {
+
+		countReq := pb.MailingServiceGroup{
+			Group: "NEWSLETTER",
+		}
+		count, err := client.CountRecipients(ctx, &countReq)
+		assert.NoError(t, err)
+		req := pb.GetRecipientsByGroupRequest{
+			Order: pb.Order_ID,
+			Pagination: &pb.Pagination{
+				Limit:  5,
+				Offset: 0,
+			},
+			Group: "NEWSLETTER",
+		}
+		res, err := client.GetRecipientsByGroup(ctx, &req)
+		assert.NoError(t, err)
+		assert.Equal(t, count.Num, int64(len(res.MailRecipients)))
 	})
 }

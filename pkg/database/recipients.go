@@ -17,7 +17,7 @@ var bgContext = context.Background()
 
 const (
 	getRecipientsBase          = "select id, email, usersServiceID, created, updated, confirmed from mailRecipients"
-	getRecipientsBaseGroupName = "select r.id, r.email, r.usersServiceID, r.created, r.updated, r.confirmed from mailRecipients as r join recipientGroupMap as m on r.id = m.recipientID join mailGroups as g on m.groupID = g.id where g.groupName = $1"
+	getRecipientsBaseGroupName = "select r.id, r.email, r.usersServiceID, r.created, r.updated, r.confirmed from mailRecipients as r join recipientGroupMap as m on r.id = m.recipientID join mailGroups as g on m.groupID = g.id"
 )
 
 func (db *Database) InsertMailRecipient(req *pb.NewMailRecipient) (int64, error) {
@@ -273,7 +273,7 @@ func (db *Database) CountRecipients(groupName string) (int64, error) {
 
 func (db *Database) GetRecipients(req *pb.GetRecipientsRequest) ([]*pb.MailRecipient, error) {
 	query, allowedVars := buildGetRecipientsQuery(req.Order.String(), req.Pagination.Limit, req.Pagination.Offset)
-
+	fmt.Println(query)
 	rows, err := db.Query(query, allowedVars...)
 	if err != nil {
 		return nil, err
@@ -288,7 +288,7 @@ func (db *Database) GetRecipients(req *pb.GetRecipientsRequest) ([]*pb.MailRecip
 }
 
 func (db *Database) GetRecipientsByGroup(req *pb.GetRecipientsByGroupRequest) ([]*pb.MailRecipient, error) {
-	query, allowedVars := buildGetRecipientsWhereGroupQuery(req.Group, req.Order.String(), req.Pagination.Limit, req.Pagination.Offset)
+	query, allowedVars := buildGetRecipientsWhereGroupQuery(req.Order.String(), req.Group, req.Pagination.Limit, req.Pagination.Offset)
 	rows, err := db.Query(query, allowedVars...)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
