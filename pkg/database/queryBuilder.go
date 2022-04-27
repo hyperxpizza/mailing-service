@@ -7,7 +7,7 @@ const (
 	limitBase       = " limit $%d"
 	offsetBase      = " offset $%d"
 	whereGroup      = " where g.groupName=$%d"
-	whereEmailIlike = " where email=$%d"
+	whereEmailIlike = " where email ilike $%d"
 )
 
 func buildGetRecipientsQuery(order string, limit, offset int64) (string, []interface{}) {
@@ -75,7 +75,7 @@ func buildSearchQuery(phrase, order string, limit, offset int64) (string, []inte
 		counter++
 		ilikeString := fmt.Sprintf(whereEmailIlike, counter)
 		fragment += ilikeString
-		allowedVars = append(allowedVars, phrase)
+		allowedVars = append(allowedVars, "%"+phrase+"%")
 	}
 
 	if order != "" {
@@ -100,5 +100,7 @@ func buildSearchQuery(phrase, order string, limit, offset int64) (string, []inte
 		allowedVars = append(allowedVars, offset)
 	}
 
-	return fragment, allowedVars
+	query := getRecipientsBase + fragment
+
+	return query, allowedVars
 }

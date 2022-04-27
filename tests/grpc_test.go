@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"flag"
+	"fmt"
 	"net"
 	"testing"
 
@@ -208,5 +209,25 @@ func TestMailingServer(t *testing.T) {
 		res, err := client.GetRecipientsByGroup(ctx, &req)
 		assert.NoError(t, err)
 		assert.Equal(t, count.Num, int64(len(res.MailRecipients)))
+	})
+
+	t.Run("Search recipients test", func(t *testing.T) {
+		countReq := pb.MailingServiceGroup{Group: ""}
+		count, err := client.CountRecipients(ctx, &countReq)
+		assert.NoError(t, err)
+		fmt.Println(count.Num)
+
+		searchReq := pb.SearchRequest{
+			Query: "hyperxpizza",
+			Pagination: &pb.Pagination{
+				Limit:  5,
+				Offset: 0,
+			},
+			Order: pb.Order_ID,
+		}
+		res, err := client.SearchRecipients(ctx, &searchReq)
+		assert.NoError(t, err)
+		assert.Equal(t, count.Num, int64(len(res.MailRecipients)))
+
 	})
 }

@@ -307,6 +307,9 @@ func (db *Database) GetRecipientsByGroup(req *pb.GetRecipientsByGroupRequest) ([
 
 func (db *Database) SearchRecipients(req *pb.SearchRequest) ([]*pb.MailRecipient, error) {
 	query, allowedVars := buildSearchQuery(req.Query, req.Order.String(), req.Pagination.Limit, req.Pagination.Offset)
+	fmt.Println(query)
+	fmt.Println(allowedVars...)
+
 	rows, err := db.Query(query, allowedVars...)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
