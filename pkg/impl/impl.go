@@ -12,6 +12,7 @@ import (
 	"github.com/hyperxpizza/mailing-service/pkg/config"
 	"github.com/hyperxpizza/mailing-service/pkg/database"
 	pb "github.com/hyperxpizza/mailing-service/pkg/grpc"
+	job_pool "github.com/hyperxpizza/mailing-service/pkg/jobPool"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 )
@@ -27,6 +28,7 @@ type MailingServiceServer struct {
 	logger     logrus.FieldLogger
 	rdc        *redis.Client
 	smtpClient *smtp.Client
+	pool       *job_pool.Pool
 	pb.UnimplementedMailingServiceServer
 }
 

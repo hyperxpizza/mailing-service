@@ -111,6 +111,11 @@ message UpdateGroupRequest {
     string newName = 2;
 }
 
+message JobRequest {
+    string body = 1;
+    string recipients = 2;
+}
+
 service MailingService {
     rpc AddRecipient(NewMailRecipient) returns (MailingServiceID) {};
     rpc RemoveRecipient(MailingServiceID) returns (google.protobuf.Empty) {};
@@ -130,4 +135,6 @@ service MailingService {
     rpc DeleteGroup(MailingServiceID) returns (google.protobuf.Empty) {};
     rpc UpdateGroupName(UpdateGroupRequest) returns (google.protobuf.Empty) {};
     rpc GetGroup(MailingServiceID) returns (MailGroup) {};
+
+    rpc AddJob()
 }

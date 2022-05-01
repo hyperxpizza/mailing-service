@@ -24,6 +24,7 @@ type Config struct {
 		Host                               string `json:"host"`
 		Port                               int    `json:"port"`
 		ConfirmationTokenExpirationMinutes int64  `json:"confirmationTokenExpirationMinutes"`
+		ConfirmationEmail                  string `json:"confirmationEmail"`
 	} `json:"mailingService"`
 	Redis struct {
 		Host     string `json:"host"`

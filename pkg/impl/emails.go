@@ -52,9 +52,16 @@ func (m *MailingServiceServer) SendConfirmationEmail(ctx context.Context, req *p
 
 	confToken := utils.GenerateOneTimeToken()
 	exp := time.Duration(m.cfg.MailingService.ConfirmationTokenExpirationMinutes) * time.Minute
-	go m.rdc.Set(ctx, key, confToken, exp)
+	m.rdc.Set(ctx, key, confToken, exp)
 
 	//send confirmation email
+	from := m.cfg.MailingService.ConfirmationEmail
+	subj := "Email address confirmation"
+	to := []string{req.Email}
+	//body, err = utils.NewConfirmationEmailTemplate()
+
+	err = m.SendMail(from, subj, "", to)
+
 	return &emptypb.Empty{}, nil
 }
 
@@ -126,7 +133,7 @@ func (m *MailingServiceServer) CheckIfRecipientIsConfirmed(ctx context.Context, 
 	return &confirmed, nil
 }
 
-func (m *MailingServiceServer) SendMail(addr, from, subject, body string, to []string) error {
+func (m *MailingServiceServer) SendMail(from, subject, body string, to []string) error {
 	if err := m.smtpClient.Mail(replacer.Replace(from)); err != nil {
 		return err
 	}
@@ -158,7 +165,10 @@ func (m *MailingServiceServer) SendMail(addr, from, subject, body string, to []s
 		return err
 	}
 
-	m.smtpClient.Quit()
+	err = m.smtpClient.Quit()
+	if err != nil {
+		return err
+	}
 
 	return nil
 }
