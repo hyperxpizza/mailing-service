@@ -23,6 +23,7 @@ const (
 )
 
 type MailingServiceServer struct {
+	ctx        context.Context
 	cfg        *config.Config
 	db         *database.Database
 	logger     logrus.FieldLogger
@@ -32,7 +33,7 @@ type MailingServiceServer struct {
 	pb.UnimplementedMailingServiceServer
 }
 
-func NewMailingServiceServer(lgr logrus.FieldLogger, c *config.Config) (*MailingServiceServer, error) {
+func NewMailingServiceServer(ctx context.Context, lgr logrus.FieldLogger, c *config.Config) (*MailingServiceServer, error) {
 	db, err := database.Connect(c)
 	if err != nil {
 		return nil, err
@@ -58,6 +59,9 @@ func NewMailingServiceServer(lgr logrus.FieldLogger, c *config.Config) (*Mailing
 	if err != nil {
 		return nil, err
 	}
+
+	pool := job_pool.NewPool(ctx, lgr)
+	go pool.Run()
 
 	return &MailingServiceServer{
 		cfg:        c,

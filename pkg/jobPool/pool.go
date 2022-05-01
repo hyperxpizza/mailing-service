@@ -2,27 +2,13 @@ package job_pool
 
 import (
 	"context"
-	"errors"
 	"sync"
 	"time"
 
+	"github.com/adhocore/gronx"
+	"github.com/go-redis/redis/v8"
 	"github.com/sirupsen/logrus"
 )
-
-type Descriptior struct {
-	Type    string
-	Due     time.Time
-	Retries int64
-	Args    map[string]interface{}
-}
-
-type Job interface {
-	Exec(context.Context, sync.WaitGroup)
-	GetDescriptor() *Descriptior
-	GetStatus() JobStatus
-	SetStatus(JobStatus)
-	GetID() string
-}
 
 type Pool struct {
 	ctx     context.Context
@@ -32,6 +18,8 @@ type Pool struct {
 	execJob chan Job
 	done    chan string
 	jobs    map[string]Job
+	gron    gronx.Gronx
+	rdc     redis.Client
 }
 
 func NewPool(ctx context.Context, logger logrus.FieldLogger) *Pool {
@@ -43,75 +31,72 @@ func NewPool(ctx context.Context, logger logrus.FieldLogger) *Pool {
 		execJob: make(chan Job),
 		done:    make(chan string),
 		jobs:    make(map[string]Job),
+		gron:    gronx.New(),
 	}
 }
 
 func (p *Pool) Run() {
-	var wg sync.WaitGroup
-	wg.Add(2)
 	p.logger.Info("Running mailing-service job pool")
 	go func() {
 		for {
 			select {
-			case <-p.execJob:
-				job := <-p.execJob
+			case job := <-p.execJob:
 				p.wg.Add(1)
-				go job.Exec(p.ctx, p.wg)
-
+				go job.Exec(p.ctx, p.wg, p.logger, job.GetID(), p.done)
+			case id := <-p.done:
+				go p.cleanupAfterJobDone(id)
 			case <-p.ctx.Done():
-				wg.Done()
 				return
 			}
 		}
 	}()
-
 	go func() {
 		for {
-			select {
-			case <-p.ctx.Done():
-				wg.Done()
-				return
-			default:
-				jobs, err := p.searchForJobs()
-				if err == nil {
-					for _, j := range jobs {
-						p.execJob <- j
-					}
-				}
-			}
+			p.searchForJobs()
 		}
 	}()
-	wg.Wait()
+
 	p.wg.Wait()
 }
 
-func (p *Pool) searchForJobs() ([]Job, error) {
+func (p *Pool) searchForJobs() {
 
-	if len(p.jobs) == 0 {
-		return nil, errors.New("no jobs")
-	}
-
-	p.rwMutex.RLock()
-	defer p.rwMutex.Unlock()
-
-	var jobs []Job
-	for _, j := range p.jobs {
-		now := time.Now()
-		desc := j.GetDescriptor()
-		if desc.Due.Equal(now) {
-
-			jobs = append(jobs, j)
-		}
-	}
-
-	return jobs, nil
-}
-
-func (p *Pool) AddRecurrentJob(job Job) {
 	p.rwMutex.Lock()
 	defer p.rwMutex.Unlock()
 
+	for _, j := range p.jobs {
+		if j.GetStatus() == Waiting {
+			due, err := p.gron.IsDue(j.GetCron(), time.Now())
+			if err != nil {
+				continue
+			}
+
+			if due {
+				p.logger.Infof("job: %s ready to be executed", j.GetID())
+				j.SetStatus(Running)
+				p.execJob <- j
+			}
+		}
+	}
+}
+
+func (p *Pool) AddJob(job Job) {
+	p.rwMutex.Lock()
+	defer p.rwMutex.Unlock()
 	p.jobs[job.GetID()] = job
+	p.logger.Infof("added job: %s to the pool", job.GetID())
+}
+
+func (p *Pool) cleanupAfterJobDone(id string) {
+	p.logger.Infof("cleaning up after job: %s", id)
+	p.rwMutex.Lock()
+	for _, j := range p.jobs {
+		if j.GetID() == id {
+			j.SetStatus(Waiting)
+			break
+		}
+	}
+	p.rwMutex.Unlock()
 }
 
 func (p *Pool) RemoveJob(id string) {
@@ -121,6 +106,4 @@ func (p *Pool) RemoveJob(id string) {
 	delete(p.jobs, id)
 }
 
-func (p *Pool) cleanup() {
-
-}
+func (p *Pool) PopulateFromDB(ids []string) {}

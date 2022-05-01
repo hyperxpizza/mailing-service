@@ -8,6 +8,7 @@ const (
 	Cancelled
 	Done
 	Failed
+	Cooling
 )
 
 func (j JobStatus) String() string {
@@ -23,6 +24,8 @@ func (j JobStatus) String() string {
 		status = "Done"
 	case Failed:
 		status = "Failed"
+	case Cooling:
+		status = "Cooling"
 	default:
 		status = "Unknown"
 	}
