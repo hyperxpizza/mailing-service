@@ -20,9 +20,9 @@ func TestPool(t *testing.T) {
 
 	execFN := func(ctx context.Context, wg sync.WaitGroup, logger logrus.FieldLogger, id string, done chan string) {
 		defer wg.Done()
-		for i := 1; i < 6; i++ {
+		for i := 1; i < 7; i++ {
 			logger.Infof("%d/5 executing job: %s", i, id)
-			time.Sleep(2 * time.Second)
+			time.Sleep(10 * time.Second)
 		}
 		logger.Infof("finished job: %s", id)
 		done <- id
