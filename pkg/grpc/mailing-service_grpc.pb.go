@@ -34,6 +34,9 @@ type MailingServiceClient interface {
 	DeleteGroup(ctx context.Context, in *MailingServiceID, opts ...grpc.CallOption) (*empty.Empty, error)
 	UpdateGroupName(ctx context.Context, in *UpdateGroupRequest, opts ...grpc.CallOption) (*empty.Empty, error)
 	GetGroup(ctx context.Context, in *MailingServiceID, opts ...grpc.CallOption) (*MailGroup, error)
+	AddJob(ctx context.Context, in *JobRequest, opts ...grpc.CallOption) (*JobID, error)
+	JobStream(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (MailingService_JobStreamClient, error)
+	DeleteJob(ctx context.Context, in *JobID, opts ...grpc.CallOption) (*empty.Empty, error)
 }
 
 type mailingServiceClient struct {
@@ -179,6 +182,56 @@ func (c *mailingServiceClient) GetGroup(ctx context.Context, in *MailingServiceI
 	return out, nil
 }
 
+func (c *mailingServiceClient) AddJob(ctx context.Context, in *JobRequest, opts ...grpc.CallOption) (*JobID, error) {
+	out := new(JobID)
+	err := c.cc.Invoke(ctx, "/MailingService/AddJob", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *mailingServiceClient) JobStream(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (MailingService_JobStreamClient, error) {
+	stream, err := c.cc.NewStream(ctx, &MailingService_ServiceDesc.Streams[0], "/MailingService/JobStream", opts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &mailingServiceJobStreamClient{stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+type MailingService_JobStreamClient interface {
+	Recv() (*JobsResponse, error)
+	grpc.ClientStream
+}
+
+type mailingServiceJobStreamClient struct {
+	grpc.ClientStream
+}
+
+func (x *mailingServiceJobStreamClient) Recv() (*JobsResponse, error) {
+	m := new(JobsResponse)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
+func (c *mailingServiceClient) DeleteJob(ctx context.Context, in *JobID, opts ...grpc.CallOption) (*empty.Empty, error) {
+	out := new(empty.Empty)
+	err := c.cc.Invoke(ctx, "/MailingService/DeleteJob", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // MailingServiceServer is the server API for MailingService service.
 // All implementations must embed UnimplementedMailingServiceServer
 // for forward compatibility
@@ -198,6 +251,9 @@ type MailingServiceServer interface {
 	DeleteGroup(context.Context, *MailingServiceID) (*empty.Empty, error)
 	UpdateGroupName(context.Context, *UpdateGroupRequest) (*empty.Empty, error)
 	GetGroup(context.Context, *MailingServiceID) (*MailGroup, error)
+	AddJob(context.Context, *JobRequest) (*JobID, error)
+	JobStream(*empty.Empty, MailingService_JobStreamServer) error
+	DeleteJob(context.Context, *JobID) (*empty.Empty, error)
 	mustEmbedUnimplementedMailingServiceServer()
 }
 
@@ -249,6 +305,15 @@ func (UnimplementedMailingServiceServer) UpdateGroupName(context.Context, *Updat
 }
 func (UnimplementedMailingServiceServer) GetGroup(context.Context, *MailingServiceID) (*MailGroup, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetGroup not implemented")
+}
+func (UnimplementedMailingServiceServer) AddJob(context.Context, *JobRequest) (*JobID, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method AddJob not implemented")
+}
+func (UnimplementedMailingServiceServer) JobStream(*empty.Empty, MailingService_JobStreamServer) error {
+	return status.Errorf(codes.Unimplemented, "method JobStream not implemented")
+}
+func (UnimplementedMailingServiceServer) DeleteJob(context.Context, *JobID) (*empty.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DeleteJob not implemented")
 }
 func (UnimplementedMailingServiceServer) mustEmbedUnimplementedMailingServiceServer() {}
 
@@ -533,6 +598,63 @@ func _MailingService_GetGroup_Handler(srv interface{}, ctx context.Context, dec 
 	return interceptor(ctx, in, info, handler)
 }
 
+func _MailingService_AddJob_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(JobRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MailingServiceServer).AddJob(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/MailingService/AddJob",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MailingServiceServer).AddJob(ctx, req.(*JobRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _MailingService_JobStream_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(empty.Empty)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(MailingServiceServer).JobStream(m, &mailingServiceJobStreamServer{stream})
+}
+
+type MailingService_JobStreamServer interface {
+	Send(*JobsResponse) error
+	grpc.ServerStream
+}
+
+type mailingServiceJobStreamServer struct {
+	grpc.ServerStream
+}
+
+func (x *mailingServiceJobStreamServer) Send(m *JobsResponse) error {
+	return x.ServerStream.SendMsg(m)
+}
+
+func _MailingService_DeleteJob_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(JobID)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MailingServiceServer).DeleteJob(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/MailingService/DeleteJob",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MailingServiceServer).DeleteJob(ctx, req.(*JobID))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // MailingService_ServiceDesc is the grpc.ServiceDesc for MailingService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -600,7 +722,21 @@ var MailingService_ServiceDesc = grpc.ServiceDesc{
 			MethodName: "GetGroup",
 			Handler:    _MailingService_GetGroup_Handler,
 		},
+		{
+			MethodName: "AddJob",
+			Handler:    _MailingService_AddJob_Handler,
+		},
+		{
+			MethodName: "DeleteJob",
+			Handler:    _MailingService_DeleteJob_Handler,
+		},
 	},
-	Streams:  []grpc.StreamDesc{},
+	Streams: []grpc.StreamDesc{
+		{
+			StreamName:    "JobStream",
+			Handler:       _MailingService_JobStream_Handler,
+			ServerStreams: true,
+		},
+	},
 	Metadata: "mailing-service.proto",
 }

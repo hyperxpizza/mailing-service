@@ -16,6 +16,12 @@
     "SMTP": {
         "host": "127.0.0.1",
         "port": 7777,
-        "confirmationTokenExpirationMinutes": 120
-    }    
+        "password": "pwd"
+    },
+    "mailingService": {
+        "host": "127.0.0.1",
+        "port": 8001,
+        "confirmationTokenExpriationMinutes": 1,
+        "confirmationEmail": "confirmation@kernelpanic.live"
+    }   
 }

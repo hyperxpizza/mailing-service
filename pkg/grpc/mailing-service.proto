@@ -111,6 +111,29 @@ message UpdateGroupRequest {
     string newName = 2;
 }
 
+message Job {
+    string id = 1;
+    string name = 3;
+    string cron = 4;
+    repeated string recipients = 5;
+    google.protobuf.Timestamp lastExecuted = 6;
+    google.protobuf.Timestamp added = 7;
+}
+
+message JobsResponse {
+    repeated Job jobs = 1;
+}
+
+message JobID {
+    string id = 1;
+}
+
+message JobRequest {
+    string body = 1;
+    string cron = 2;
+    repeated string recipients = 3;
+}
+
 service MailingService {
     rpc AddRecipient(NewMailRecipient) returns (MailingServiceID) {};
     rpc RemoveRecipient(MailingServiceID) returns (google.protobuf.Empty) {};
@@ -120,7 +143,6 @@ service MailingService {
     rpc SearchRecipients(SearchRequest) returns (MailRecipients) {};
     rpc CountRecipients(MailingServiceGroup) returns (Count) {};
     
-
     rpc SendConfirmationEmail(MailingServiceEmail) returns (google.protobuf.Empty) {};
     rpc ConfirmRecipient(RecipientConfirmation) returns (google.protobuf.Empty) {};
     rpc CheckIfRecipientIsConfirmed(CheckIfConfirmedRequest) returns (Cofirmed) {};
@@ -130,4 +152,9 @@ service MailingService {
     rpc DeleteGroup(MailingServiceID) returns (google.protobuf.Empty) {};
     rpc UpdateGroupName(UpdateGroupRequest) returns (google.protobuf.Empty) {};
     rpc GetGroup(MailingServiceID) returns (MailGroup) {};
+
+    rpc AddJob(JobRequest) returns (JobID) {};
+    rpc JobStream(google.protobuf.Empty) returns (stream JobsResponse) {};
+    rpc DeleteJob(JobID) returns (google.protobuf.Empty) {};
+
 }

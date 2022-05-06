@@ -24,7 +24,6 @@ create table recipientGroupMap (
     recipientID integer references mailRecipients(id) on delete cascade 
 );
 
-
 insert into mailRecipients(id, email, usersServiceID, created, updated, confirmed) values (default, 'hyperxpizza@gmail.com', 1, default, default, false);
 insert into mailRecipients(id, email, usersServiceID, created, updated, confirmed) values (default, 'hyperxpizza2@gmail.com', 2, default, default, false);
 insert into mailRecipients(id, email, usersServiceID, created, updated, confirmed) values (default, 'hyperxpizza3@gmail.com', 3, default, default, false);

@@ -46,7 +46,8 @@ func mockGrpcServer(configPath string, secure bool) error {
 		panic(err)
 	}
 
-	mailingServiceServer, err := impl.NewMailingServiceServer(logger, cfg)
+	ctx := context.Background()
+	mailingServiceServer, err := impl.NewMailingServiceServer(ctx, logger, cfg)
 	if err != nil {
 		return err
 	}
@@ -230,4 +231,10 @@ func TestMailingServer(t *testing.T) {
 		assert.Equal(t, count.Num, int64(len(res.MailRecipients)))
 
 	})
+
+	t.Run("Test Email Confirmation", func(t *testing.T) {
+		_, err := client.SendConfirmationEmail(ctx, &pb.MailingServiceEmail{Email: "hyperxpizza@gmail.com"})
+		assert.NoError(t, err)
+	})
+
 }
