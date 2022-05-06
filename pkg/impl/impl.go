@@ -2,6 +2,7 @@ package impl
 
 import (
 	"context"
+	"crypto/tls"
 	"errors"
 	"fmt"
 	"net"
@@ -15,6 +16,7 @@ import (
 	job_pool "github.com/hyperxpizza/mailing-service/pkg/jobPool"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
 )
 
 const (
@@ -85,19 +87,33 @@ func checkRedisConnection(rdc *redis.Client) error {
 	return nil
 }
 
-func (m *MailingServiceServer) Run() {
-	grpcServer := grpc.NewServer()
+func (m *MailingServiceServer) Run() error {
+
+	cert, err := tls.LoadX509KeyPair(m.cfg.TLS.CertPath, m.cfg.TLS.KeyPath)
+	if err != nil {
+		return err
+	}
+
+	opts := []grpc.ServerOption{
+		grpc.Creds(credentials.NewServerTLSFromCert(&cert)),
+	}
+
+	grpcServer := grpc.NewServer(opts...)
 	pb.RegisterMailingServiceServer(grpcServer, m)
 
 	addr := fmt.Sprintf(":%d", m.cfg.MailingService.Port)
 	lis, err := net.Listen("tcp", addr)
 	if err != nil {
 		m.logger.Fatalf("net.Listen failed: %s", err.Error())
+		return err
 	}
 
 	m.logger.Infof("auth service server running on %s:%d", m.cfg.MailingService.Host, m.cfg.MailingService.Port)
 
 	if err := grpcServer.Serve(lis); err != nil {
 		m.logger.Fatalf("failed to serve: %s", err.Error())
+		return err
 	}
+
+	return nil
 }

@@ -25,6 +25,7 @@ type Config struct {
 		Port                               int    `json:"port"`
 		ConfirmationTokenExpirationMinutes int64  `json:"confirmationTokenExpirationMinutes"`
 		ConfirmationEmail                  string `json:"confirmationEmail"`
+		Loglevel                           string `json:"loglevel"`
 	} `json:"mailingService"`
 	Redis struct {
 		Host     string `json:"host"`
@@ -33,6 +34,10 @@ type Config struct {
 		Password string `json:"password"`
 		DB       int64  `json:"db"`
 	} `json:"redis"`
+	TLS struct {
+		CertPath string `json:"certPath"`
+		KeyPath  string `json:"keyPath"`
+	}
 }
 
 func NewConfig(pathToFile string) (*Config, error) {

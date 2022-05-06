@@ -46,6 +46,7 @@ func mockGrpcServer(configPath string, secure bool) error {
 		panic(err)
 	}
 
+	ctx := context.Background()
 	mailingServiceServer, err := impl.NewMailingServiceServer(ctx, logger, cfg)
 	if err != nil {
 		return err
