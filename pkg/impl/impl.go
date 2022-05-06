@@ -60,7 +60,7 @@ func NewMailingServiceServer(ctx context.Context, lgr logrus.FieldLogger, c *con
 		return nil, err
 	}
 
-	pool := job_pool.NewPool(ctx, lgr)
+	pool := job_pool.NewPool(ctx, lgr, rdc)
 	go pool.Run()
 
 	return &MailingServiceServer{

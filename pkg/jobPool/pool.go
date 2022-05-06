@@ -19,10 +19,10 @@ type Pool struct {
 	done    chan string
 	jobs    map[string]Job
 	gron    gronx.Gronx
-	rdc     redis.Client
+	rdc     *redis.Client
 }
 
-func NewPool(ctx context.Context, logger logrus.FieldLogger) *Pool {
+func NewPool(ctx context.Context, logger logrus.FieldLogger, rdc *redis.Client) *Pool {
 	return &Pool{
 		ctx:     ctx,
 		wg:      sync.WaitGroup{},
@@ -32,6 +32,7 @@ func NewPool(ctx context.Context, logger logrus.FieldLogger) *Pool {
 		done:    make(chan string),
 		jobs:    make(map[string]Job),
 		gron:    gronx.New(),
+		rdc:     rdc,
 	}
 }
 
@@ -104,6 +105,10 @@ func (p *Pool) RemoveJob(id string) {
 	defer p.rwMutex.Unlock()
 
 	delete(p.jobs, id)
+}
+
+func (p *Pool) GetJobs() map[string]Job {
+	return p.jobs
 }
 
 func (p *Pool) PopulateFromDB(ids []string) {}
