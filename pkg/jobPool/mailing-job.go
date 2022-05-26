@@ -17,10 +17,10 @@ const (
 
 var gron = gronx.New()
 
-type ExecutionFunction func(context.Context, sync.WaitGroup, logrus.FieldLogger, string, chan string)
+type ExecutionFunction func(context.Context, logrus.FieldLogger, chan string)
 
 type Job interface {
-	Exec(context.Context, sync.WaitGroup, logrus.FieldLogger, string, chan string)
+	Exec(context.Context, sync.WaitGroup, logrus.FieldLogger, chan string)
 	GetStatus() JobStatus
 	SetStatus(JobStatus)
 	GetID() string
@@ -62,8 +62,8 @@ func (m *MailingJob) SetLastExecuted(t time.Time) {
 	m.lastExecuted = t
 }
 
-func (m *MailingJob) Exec(ctx context.Context, wg sync.WaitGroup, logger logrus.FieldLogger, id string, done chan string) {
-	m.ExecFn(ctx, wg, logger, id, done)
+func (m *MailingJob) Exec(ctx context.Context, logger logrus.FieldLogger, done chan string) {
+	m.ExecFn(ctx, logger, done)
 }
 
 func (m *MailingJob) GetStatus() JobStatus {

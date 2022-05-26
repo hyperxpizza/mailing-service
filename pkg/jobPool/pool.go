@@ -2,6 +2,7 @@ package job_pool
 
 import (
 	"context"
+	"encoding/json"
 	"sync"
 	"time"
 
@@ -15,11 +16,12 @@ type Pool struct {
 	wg      sync.WaitGroup
 	rwMutex sync.RWMutex
 	logger  logrus.FieldLogger
-	execJob chan Job
+	execJob chan *MailingJob
 	done    chan string
-	jobs    map[string]Job
+	jobs    map[string]*MailingJob
 	gron    gronx.Gronx
 	rdc     *redis.Client
+	ticker  *time.Ticker
 }
 
 func NewPool(ctx context.Context, logger logrus.FieldLogger, rdc *redis.Client) *Pool {
@@ -28,87 +30,92 @@ func NewPool(ctx context.Context, logger logrus.FieldLogger, rdc *redis.Client) 
 		wg:      sync.WaitGroup{},
 		rwMutex: sync.RWMutex{},
 		logger:  logger,
-		execJob: make(chan Job),
+		execJob: make(chan *MailingJob),
 		done:    make(chan string),
-		jobs:    make(map[string]Job),
+		jobs:    make(map[string]*MailingJob),
 		gron:    gronx.New(),
 		rdc:     rdc,
+		ticker:  time.NewTicker(time.Second),
 	}
 }
 
 func (p *Pool) Run() {
-	p.logger.Info("Running mailing-service job pool")
+	go func() {
+		for {
+			select {
+			case t := <-p.ticker.C:
+				p.searchForJobs(t)
+			}
+		}
+	}()
+
 	go func() {
 		for {
 			select {
 			case job := <-p.execJob:
 				p.wg.Add(1)
-				go job.Exec(p.ctx, p.wg, p.logger, job.GetID(), p.done)
+				go job.Exec(p.ctx, p.logger, p.done)
 			case id := <-p.done:
-				go p.cleanupAfterJobDone(id)
-			case <-p.ctx.Done():
-				return
+				p.wg.Done()
+				go p.cleanup(id)
 			}
 		}
 	}()
-	go func() {
-		for {
-			p.searchForJobs()
-		}
-	}()
-
-	p.wg.Wait()
 }
 
-func (p *Pool) searchForJobs() {
+func (p *Pool) AddJob(job *MailingJob) error {
 
+	data, err := json.Marshal(job)
+	if err != nil {
+		return err
+	}
+
+	go p.rdc.Set(p.ctx, job.id, data, 0)
+
+	p.rwMutex.Lock()
+	p.jobs[job.id] = job
+	p.rwMutex.Unlock()
+
+	return nil
+}
+
+func (p *Pool) RemoveJob(id string) error {
 	p.rwMutex.Lock()
 	defer p.rwMutex.Unlock()
 
-	for _, j := range p.jobs {
-		if j.GetStatus() == Waiting {
-			due, err := p.gron.IsDue(j.GetCron(), time.Now())
+	return nil
+}
+
+func (p *Pool) LoadJobsFromDB() {
+	var jobs []*MailingJob
+
+	for _, j := range jobs {
+		p.jobs[j.id] = j
+	}
+}
+
+func (p *Pool) searchForJobs(t time.Time) {
+	p.rwMutex.RLock()
+	for _, job := range p.jobs {
+		if job.status == Waiting {
+
+			due, err := p.gron.IsDue(job.cron, t)
 			if err != nil {
+				p.logger.Debugf("")
 				continue
 			}
 
 			if due {
-				p.logger.Infof("job: %s ready to be executed", j.GetID())
-				j.SetStatus(Running)
-				p.execJob <- j
+				job.SetStatus(Running)
+				p.execJob <- job
 			}
+
 		}
 	}
+	p.rwMutex.RUnlock()
 }
 
-func (p *Pool) AddJob(job Job) {
+func (p *Pool) cleanup(id string) {
 	p.rwMutex.Lock()
-	defer p.rwMutex.Unlock()
-	p.jobs[job.GetID()] = job
-	p.logger.Infof("added job: %s to the pool", job.GetID())
+	p.jobs[id].status = Waiting
 }
-
-func (p *Pool) cleanupAfterJobDone(id string) {
-	p.logger.Infof("cleaning up after job: %s", id)
-	p.rwMutex.Lock()
-	for _, j := range p.jobs {
-		if j.GetID() == id {
-			j.SetStatus(Waiting)
-			break
-		}
-	}
-	p.rwMutex.Unlock()
-}
-
-func (p *Pool) RemoveJob(id string) {
-	p.rwMutex.Lock()
-	defer p.rwMutex.Unlock()
-
-	delete(p.jobs, id)
-}
-
-func (p *Pool) GetJobs() map[string]Job {
-	return p.jobs
-}
-
-func (p *Pool) PopulateFromDB(ids []string) {}

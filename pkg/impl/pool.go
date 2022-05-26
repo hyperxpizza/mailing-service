@@ -13,6 +13,7 @@ func (m *MailingServiceServer) AddJob(ctx context.Context, req *pb.JobRequest) (
 }
 
 func (m *MailingServiceServer) JobStream(req *emptypb.Empty, stream pb.MailingService_JobStreamServer) error {
+
 	return nil
 }
 

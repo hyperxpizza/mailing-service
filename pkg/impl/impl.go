@@ -32,6 +32,7 @@ type MailingServiceServer struct {
 	rdc        *redis.Client
 	smtpClient *smtp.Client
 	pool       *job_pool.Pool
+	poolCtx    context.Context
 	pb.UnimplementedMailingServiceServer
 }
 
@@ -63,13 +64,13 @@ func NewMailingServiceServer(ctx context.Context, lgr logrus.FieldLogger, c *con
 	}
 
 	pool := job_pool.NewPool(ctx, lgr, rdc)
-	go pool.Run()
 
 	return &MailingServiceServer{
 		cfg:        c,
 		db:         db,
 		logger:     lgr,
 		rdc:        rdc,
+		pool:       pool,
 		smtpClient: smtpClient,
 	}, nil
 }
@@ -85,6 +86,11 @@ func checkRedisConnection(rdc *redis.Client) error {
 	}
 
 	return nil
+}
+
+func (m *MailingServiceServer) WithPoolCtx(ctx context.Context) *MailingServiceServer {
+	m.poolCtx = ctx
+	return m
 }
 
 func (m *MailingServiceServer) Run() error {
