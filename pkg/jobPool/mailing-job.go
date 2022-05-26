@@ -38,7 +38,7 @@ type MailingJob struct {
 	ExecFn       ExecutionFunction
 }
 
-func NewMailingJob(cron string, jType JobType, fn ExecutionFunction) (*MailingJob, error) {
+func NewMailingJob(cron string, jType JobType) (*MailingJob, error) {
 	if !gron.IsValid(cron) {
 		return nil, errors.New(cronNotValidError)
 	}
@@ -50,8 +50,11 @@ func NewMailingJob(cron string, jType JobType, fn ExecutionFunction) (*MailingJo
 		cron:    cron,
 		jobType: jType,
 		status:  Waiting,
-		ExecFn:  fn,
 	}, nil
+}
+
+func (m *MailingJob) SetExecFN(fn ExecutionFunction) {
+	m.ExecFn = fn
 }
 
 func (m *MailingJob) GetLastExecuted() time.Time {

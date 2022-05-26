@@ -40,9 +40,15 @@ func NewPool(ctx context.Context, logger logrus.FieldLogger, rdc *redis.Client) 
 }
 
 func (p *Pool) Run() {
+	p.wg.Add(2)
 	go func() {
 		for {
 			select {
+
+			case <-p.ctx.Done():
+				p.wg.Done()
+				break
+
 			case t := <-p.ticker.C:
 				p.searchForJobs(t)
 			}
@@ -52,8 +58,12 @@ func (p *Pool) Run() {
 	go func() {
 		for {
 			select {
+			case <-p.ctx.Done():
+				p.wg.Done()
+				break
 			case job := <-p.execJob:
 				p.wg.Add(1)
+				p.logger.Infof("executing job: %s", job.id)
 				go job.Exec(p.ctx, p.logger, p.done)
 			case id := <-p.done:
 				p.wg.Done()
@@ -61,6 +71,7 @@ func (p *Pool) Run() {
 			}
 		}
 	}()
+	p.wg.Wait()
 }
 
 func (p *Pool) AddJob(job *MailingJob) error {
@@ -81,7 +92,10 @@ func (p *Pool) AddJob(job *MailingJob) error {
 
 func (p *Pool) RemoveJob(id string) error {
 	p.rwMutex.Lock()
-	defer p.rwMutex.Unlock()
+	delete(p.jobs, id)
+	p.rwMutex.Unlock()
+
+	go p.rdc.Del(p.ctx, id)
 
 	return nil
 }
@@ -101,7 +115,7 @@ func (p *Pool) searchForJobs(t time.Time) {
 
 			due, err := p.gron.IsDue(job.cron, t)
 			if err != nil {
-				p.logger.Debugf("")
+				p.logger.Debugf("job with id: %s has an invalid cron: %s", job.id, err.Error())
 				continue
 			}
 
@@ -117,5 +131,10 @@ func (p *Pool) searchForJobs(t time.Time) {
 
 func (p *Pool) cleanup(id string) {
 	p.rwMutex.Lock()
-	p.jobs[id].status = Waiting
+	job := p.jobs[id]
+	job.status = Waiting
+	if job.jobType == OneTime {
+		p.RemoveJob(id)
+	}
+	p.rwMutex.Unlock()
 }
