@@ -2,6 +2,8 @@ package job_pool
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
 	"sync"
 	"time"
 
@@ -15,100 +17,169 @@ type Pool struct {
 	wg      sync.WaitGroup
 	rwMutex sync.RWMutex
 	logger  logrus.FieldLogger
-	execJob chan Job
+	execJob chan *MailingJob
 	done    chan string
-	jobs    map[string]Job
+	jobs    map[string]*MailingJob
 	gron    gronx.Gronx
 	rdc     *redis.Client
+	ticker  *time.Ticker
 }
 
-func NewPool(ctx context.Context, logger logrus.FieldLogger, rdc *redis.Client) *Pool {
-	return &Pool{
+func NewPool(ctx context.Context, logger logrus.FieldLogger, rdc *redis.Client) (*Pool, error) {
+	pool := Pool{
 		ctx:     ctx,
 		wg:      sync.WaitGroup{},
 		rwMutex: sync.RWMutex{},
 		logger:  logger,
-		execJob: make(chan Job),
+		execJob: make(chan *MailingJob),
 		done:    make(chan string),
-		jobs:    make(map[string]Job),
+		jobs:    make(map[string]*MailingJob),
 		gron:    gronx.New(),
 		rdc:     rdc,
+		ticker:  time.NewTicker(time.Minute),
 	}
+
+	err := pool.LoadJobsFromDB()
+	if err != nil {
+		return nil, err
+	}
+
+	return &pool, nil
 }
 
 func (p *Pool) Run() {
-	p.logger.Info("Running mailing-service job pool")
+	p.wg.Add(2)
 	go func() {
 		for {
 			select {
-			case job := <-p.execJob:
-				p.wg.Add(1)
-				go job.Exec(p.ctx, p.wg, p.logger, job.GetID(), p.done)
-			case id := <-p.done:
-				go p.cleanupAfterJobDone(id)
 			case <-p.ctx.Done():
+				p.wg.Done()
 				return
+			case t := <-p.ticker.C:
+				p.searchForJobs(t)
 			}
 		}
 	}()
+
 	go func() {
 		for {
-			p.searchForJobs()
+			select {
+			case <-p.ctx.Done():
+				p.wg.Done()
+				return
+			case job := <-p.execJob:
+				p.wg.Add(1)
+				p.logger.Infof("executing job: %s", job.id)
+				go job.Exec(p.ctx, p.logger, p.done)
+			case id := <-p.done:
+				p.wg.Done()
+				go p.cleanup(id)
+			}
 		}
 	}()
-
+	p.logger.Infoln("Running pool...")
 	p.wg.Wait()
+	p.logger.Infoln("Shutting down...")
 }
 
-func (p *Pool) searchForJobs() {
+func (p *Pool) AddJob(job *MailingJob) error {
+
+	if err := p.rdc.Set(p.ctx, job.id, job, 0).Err(); err != nil {
+		p.logger.Infof("failed to insert job %s into the database: %s", job.id, err.Error())
+		return err
+	}
 
 	p.rwMutex.Lock()
-	defer p.rwMutex.Unlock()
+	p.jobs[job.id] = job
+	p.rwMutex.Unlock()
 
-	for _, j := range p.jobs {
-		if j.GetStatus() == Waiting {
-			due, err := p.gron.IsDue(j.GetCron(), time.Now())
+	p.logger.Infof("Added new job: %s", job.id)
+
+	return nil
+}
+
+func (p *Pool) RemoveJob(id string) error {
+
+	if err := p.rdc.Del(p.ctx, id).Err(); err != nil {
+		p.logger.Infof("failed to detele job %s from the database: %s", id, err.Error())
+		return err
+	}
+
+	p.rwMutex.Lock()
+	delete(p.jobs, id)
+	p.rwMutex.Unlock()
+
+	return nil
+}
+
+func (p *Pool) LoadJobsFromDB() error {
+	p.logger.Infoln("Loading jobs from the database...")
+	counter := 0
+	iter := p.rdc.Scan(p.ctx, 0, "prefix:*", 0).Iterator()
+	for iter.Next(p.ctx) {
+		fmt.Println(iter.Val())
+
+		result, err := p.rdc.Get(p.ctx, iter.Val()).Result()
+		if err != nil {
+			p.logger.Debugf("getting value for key %s failed: %s", iter.Val(), err.Error())
+			continue
+		}
+
+		var job MailingJob
+		err = json.Unmarshal([]byte(result), &job)
+		if err != nil {
+			p.logger.Debugf("unmarshaling failed: %s", err.Error())
+			continue
+		}
+
+		p.rwMutex.Lock()
+		p.jobs[job.id] = &job
+		p.rwMutex.Unlock()
+		counter++
+	}
+
+	if err := iter.Err(); err != nil {
+		return err
+	}
+
+	p.logger.Infof("loaded %d jobs from the database", counter)
+	return nil
+
+}
+
+func (p *Pool) searchForJobs(t time.Time) {
+	p.rwMutex.RLock()
+	for _, job := range p.jobs {
+		if job.status == Waiting {
+
+			due, err := p.gron.IsDue(job.cron, t)
 			if err != nil {
+				p.logger.Debugf("job with id: %s has an invalid cron: %s", job.id, err.Error())
 				continue
 			}
 
 			if due {
-				p.logger.Infof("job: %s ready to be executed", j.GetID())
-				j.SetStatus(Running)
-				p.execJob <- j
+				job.SetStatus(Running)
+				p.execJob <- job
 			}
+
 		}
 	}
+	p.rwMutex.RUnlock()
 }
 
-func (p *Pool) AddJob(job Job) {
-	p.rwMutex.Lock()
-	defer p.rwMutex.Unlock()
-	p.jobs[job.GetID()] = job
-	p.logger.Infof("added job: %s to the pool", job.GetID())
-}
-
-func (p *Pool) cleanupAfterJobDone(id string) {
-	p.logger.Infof("cleaning up after job: %s", id)
-	p.rwMutex.Lock()
-	for _, j := range p.jobs {
-		if j.GetID() == id {
-			j.SetStatus(Waiting)
-			break
-		}
-	}
-	p.rwMutex.Unlock()
-}
-
-func (p *Pool) RemoveJob(id string) {
-	p.rwMutex.Lock()
-	defer p.rwMutex.Unlock()
-
-	delete(p.jobs, id)
-}
-
-func (p *Pool) GetJobs() map[string]Job {
+func (p *Pool) GetJobs() map[string]*MailingJob {
+	p.rwMutex.RLock()
+	defer p.rwMutex.RUnlock()
 	return p.jobs
 }
 
-func (p *Pool) PopulateFromDB(ids []string) {}
+func (p *Pool) cleanup(id string) {
+	p.rwMutex.Lock()
+	job := p.jobs[id]
+	job.status = Waiting
+	if job.jobType == OneTime {
+		p.RemoveJob(id)
+	}
+	p.rwMutex.Unlock()
+}

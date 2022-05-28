@@ -32,6 +32,7 @@ type MailingServiceServer struct {
 	rdc        *redis.Client
 	smtpClient *smtp.Client
 	pool       *job_pool.Pool
+	poolCtx    context.Context
 	pb.UnimplementedMailingServiceServer
 }
 
@@ -62,14 +63,17 @@ func NewMailingServiceServer(ctx context.Context, lgr logrus.FieldLogger, c *con
 		return nil, err
 	}
 
-	pool := job_pool.NewPool(ctx, lgr, rdc)
-	go pool.Run()
+	pool, err := job_pool.NewPool(ctx, lgr, rdc)
+	if err != nil {
+		return nil, err
+	}
 
 	return &MailingServiceServer{
 		cfg:        c,
 		db:         db,
 		logger:     lgr,
 		rdc:        rdc,
+		pool:       pool,
 		smtpClient: smtpClient,
 	}, nil
 }
