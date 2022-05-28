@@ -63,7 +63,10 @@ func NewMailingServiceServer(ctx context.Context, lgr logrus.FieldLogger, c *con
 		return nil, err
 	}
 
-	pool := job_pool.NewPool(ctx, lgr, rdc)
+	pool, err := job_pool.NewPool(ctx, lgr, rdc)
+	if err != nil {
+		return nil, err
+	}
 
 	return &MailingServiceServer{
 		cfg:        c,
@@ -86,11 +89,6 @@ func checkRedisConnection(rdc *redis.Client) error {
 	}
 
 	return nil
-}
-
-func (m *MailingServiceServer) WithPoolCtx(ctx context.Context) *MailingServiceServer {
-	m.poolCtx = ctx
-	return m
 }
 
 func (m *MailingServiceServer) Run() error {
